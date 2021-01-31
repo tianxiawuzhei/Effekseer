@@ -19,10 +19,10 @@
 #include "Effekseer.EffectNodeRing.h"
 #include "Effekseer.EffectNodeRoot.h"
 #include "Effekseer.EffectNodeSprite.h"
+#include "Effekseer.Resource.h"
 #include "Effekseer.Setting.h"
 #include "Sound/Effekseer.SoundPlayer.h"
 #include "Utils/Effekseer.BinaryReader.h"
-#include "Effekseer.Resource.h"
 
 //----------------------------------------------------------------------------------
 //
@@ -542,11 +542,10 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 				pos += sizeof(int32_t);
 			}
 
-			memcpy(&DepthValues.SoftParticle, pos, sizeof(float));
+			// offset
 			pos += sizeof(float);
 
 			DepthValues.DepthOffset *= m_effect->GetMaginification();
-			DepthValues.SoftParticle *= m_effect->GetMaginification();
 
 			if (DepthValues.DepthParameter.DepthClipping < FLT_MAX / 10)
 			{
@@ -557,6 +556,12 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 			DepthValues.DepthParameter.IsDepthOffsetScaledWithCamera = DepthValues.IsDepthOffsetScaledWithCamera;
 			DepthValues.DepthParameter.IsDepthOffsetScaledWithParticleScale = DepthValues.IsDepthOffsetScaledWithParticleScale;
 			DepthValues.DepthParameter.ZSort = DepthValues.ZSort;
+
+			DepthValues.DepthParameter.IsDepthParameterEnabled =
+				DepthValues.DepthParameter.DepthOffset != 0.0f ||
+				DepthValues.DepthParameter.IsDepthOffsetScaledWithCamera ||
+				DepthValues.DepthParameter.IsDepthOffsetScaledWithParticleScale ||
+				DepthValues.DepthParameter.SuppressionOfScalingByDepth != 1.0f;
 		}
 
 		// Convert right handle coordinate system into left handle coordinate system
@@ -732,7 +737,7 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 
 		LoadRendererParameter(pos, m_effect->GetSetting());
 
-			// rescale intensity after 1.5
+		// rescale intensity after 1.5
 #ifndef __EFFEKSEER_FOR_UE4__ // Hack for EffekseerForUE4
 		RendererCommon.BasicParameter.DistortionIntensity *= m_effect->GetMaginification();
 		RendererCommon.DistortionIntensity *= m_effect->GetMaginification();

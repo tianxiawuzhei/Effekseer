@@ -56,7 +56,7 @@ public:
 
 	struct InstanceParameter
 	{
-		SIMD::Mat43f SRTMatrix43;
+		SIMD::SRTMat43f SRTMatrix43;
 		RectF UV;
 
 		RectF AlphaUV;

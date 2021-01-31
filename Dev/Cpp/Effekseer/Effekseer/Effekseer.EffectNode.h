@@ -186,7 +186,6 @@ struct ParameterDepthValues
 	bool IsDepthOffsetScaledWithParticleScale;
 	ZSortType ZSort;
 	int32_t DrawingPriority;
-	float SoftParticle;
 
 	NodeRendererDepthParameter DepthParameter;
 
@@ -197,7 +196,6 @@ struct ParameterDepthValues
 		IsDepthOffsetScaledWithParticleScale = false;
 		ZSort = ZSortType::None;
 		DrawingPriority = 0;
-		SoftParticle = 0.0f;
 	}
 };
 

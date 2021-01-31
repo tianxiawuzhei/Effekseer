@@ -41,8 +41,8 @@ private:
 		bool GoingToStopRoot;
 		EffectInstanceRemovingCallback RemovingCallback;
 
-		SIMD::Mat43f BaseMatrix;
-		SIMD::Mat43f GlobalMatrix;
+		SIMD::SRTMat43f BaseMatrix{};
+		SIMD::SRTMat43f GlobalMatrix{};
 
 		float Speed;
 
@@ -101,7 +101,7 @@ private:
 		{
 		}
 
-		SIMD::Mat43f* GetEnabledGlobalMatrix();
+		SIMD::SRTMat43f* GetEnabledGlobalMatrix();
 
 		void CopyMatrixFromInstanceToRoot();
 	};
@@ -228,7 +228,7 @@ public:
 	void ReleaseGroup(InstanceGroup* group);
 
 	InstanceContainer*
-	CreateInstanceContainer(EffectNode* pEffectNode, InstanceGlobal* pGlobal, bool isRoot, const SIMD::Mat43f& rootMatrix, Instance* pParent);
+	CreateInstanceContainer(EffectNode* pEffectNode, InstanceGlobal* pGlobal, bool isRoot, const SIMD::SRTMat43f& rootMatrix, Instance* pParent);
 	void ReleaseInstanceContainer(InstanceContainer* container);
 
 	void LaunchWorkerThreads(uint32_t threadCount) override;

@@ -921,6 +921,7 @@ struct MaterialRenderData
 */
 struct NodeRendererDepthParameter
 {
+	bool IsDepthParameterEnabled = true;
 	float DepthOffset = 0.0f;
 	bool IsDepthOffsetScaledWithCamera = false;
 	bool IsDepthOffsetScaledWithParticleScale = false;

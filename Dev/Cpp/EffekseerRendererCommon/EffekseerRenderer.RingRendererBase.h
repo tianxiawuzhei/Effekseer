@@ -239,7 +239,7 @@ protected:
 
 			if (parameter.EnableViewOffset)
 			{
-				Effekseer::SIMD::Mat43f instMat = instanceParameter.SRTMatrix43;
+				Effekseer::SIMD::Mat43f instMat = instanceParameter.SRTMatrix43.ToMat();
 
 				ApplyViewOffset(instMat, camera, instanceParameter.ViewOffsetDistance);
 
@@ -247,7 +247,7 @@ protected:
 			}
 			else
 			{
-				CalcBillboard(parameter.Billboard, mat43, s, R, F, instanceParameter.SRTMatrix43, m_renderer->GetCameraFrontDirection());
+				CalcBillboard(parameter.Billboard, mat43, s, R, F, instanceParameter.SRTMatrix43.ToMat(), m_renderer->GetCameraFrontDirection());
 			}
 
 			ApplyDepthParameters(mat43,
@@ -268,7 +268,7 @@ protected:
 		}
 		else if (parameter.Billboard == ::Effekseer::BillboardType::Fixed)
 		{
-			mat43 = instanceParameter.SRTMatrix43;
+			mat43 = instanceParameter.SRTMatrix43.ToMat();
 
 			if (parameter.EnableViewOffset)
 			{

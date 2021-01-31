@@ -316,13 +316,13 @@ public:
 	float* m_nextGenerationTime;
 
 	// Spawning Method matrix
-	SIMD::Mat43f m_GenerationLocation;
+	SIMD::SRTMat43f m_GenerationLocation;
 
 	// 変換用行列
-	SIMD::Mat43f m_GlobalMatrix43;
+	SIMD::SRTMat43f m_GlobalMatrix43;
 
 	// 親の変換用行列
-	SIMD::Mat43f m_ParentMatrix;
+	SIMD::SRTMat43f m_ParentMatrix;
 
 	// FirstUpdate実行前
 	bool m_IsFirstTime;
@@ -396,12 +396,12 @@ public:
 	/**
 		@brief	行列の取得
 	*/
-	const SIMD::Mat43f& GetGlobalMatrix43() const;
+	const SIMD::SRTMat43f& GetGlobalMatrix43() const;
 
 	/**
 		@brief	初期化
 	*/
-	void Initialize(Instance* parent, int32_t instanceNumber, const SIMD::Mat43f& globalMatrix);
+	void Initialize(Instance* parent, int32_t instanceNumber, const SIMD::SRTMat43f& globalMatrix);
 
 	/**
 		@brief	初回の更新

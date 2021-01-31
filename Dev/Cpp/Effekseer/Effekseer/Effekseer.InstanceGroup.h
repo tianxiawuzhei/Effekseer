@@ -37,8 +37,8 @@ private:
 	InstanceGlobal* m_global;
 	int32_t m_time;
 
-	SIMD::Mat43f parentMatrix_;
-	SIMD::Mat43f parentRotation_;
+	SIMD::SRTMat43f parentMatrix_;
+	SIMD::SRTMat43f parentRotation_;
 	SIMD::Vec3f parentTranslation_;
 	SIMD::Vec3f parentScale_;
 
@@ -71,9 +71,9 @@ public:
 
 	void Update(bool shown);
 
-	void SetBaseMatrix(const SIMD::Mat43f& mat);
+	void SetBaseMatrix(const SIMD::SRTMat43f& mat);
 
-	void SetParentMatrix(const SIMD::Mat43f& mat);
+	void SetParentMatrix(const SIMD::SRTMat43f& mat);
 
 	void RemoveForcibly();
 
@@ -104,7 +104,7 @@ public:
 		return m_global;
 	}
 
-	const SIMD::Mat43f& GetParentMatrix() const
+	const SIMD::SRTMat43f& GetParentMatrix() const
 	{
 		return parentMatrix_;
 	}
@@ -112,7 +112,7 @@ public:
 	{
 		return parentTranslation_;
 	}
-	const SIMD::Mat43f& GetParentRotation() const
+	const SIMD::SRTMat43f& GetParentRotation() const
 	{
 		return parentRotation_;
 	}

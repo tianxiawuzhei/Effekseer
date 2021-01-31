@@ -463,7 +463,7 @@ protected:
 				auto p = efkVector3D();
 				auto& param = instances[loop];
 
-				auto mat = param.SRTMatrix43;
+				auto mat = param.SRTMatrix43.ToMat();
 
 				if (parameter.EnableViewOffset == true)
 				{
@@ -492,7 +492,7 @@ protected:
 
 			for (int32_t sploop = 0; sploop < parameter.SplineDivision; sploop++)
 			{
-				auto mat = param.SRTMatrix43;
+				auto mat = param.SRTMatrix43.ToMat();
 
 				if (parameter.EnableViewOffset == true)
 				{

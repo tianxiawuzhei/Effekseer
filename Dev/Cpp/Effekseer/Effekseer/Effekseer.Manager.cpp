@@ -68,7 +68,7 @@ ManagerRef Manager::Create(int instance_max, bool autoFlip)
 	return MakeRefPtr<ManagerImplemented>(instance_max, autoFlip);
 }
 
-SIMD::Mat43f* ManagerImplemented::DrawSet::GetEnabledGlobalMatrix()
+SIMD::SRTMat43f* ManagerImplemented::DrawSet::GetEnabledGlobalMatrix()
 {
 	if (IsPreupdated)
 	{
@@ -279,7 +279,7 @@ void ManagerImplemented::GCDrawSet(bool isRemovingManager)
 }
 
 InstanceContainer* ManagerImplemented::CreateInstanceContainer(
-	EffectNode* pEffectNode, InstanceGlobal* pGlobal, bool isRoot, const SIMD::Mat43f& rootMatrix, Instance* pParent)
+	EffectNode* pEffectNode, InstanceGlobal* pGlobal, bool isRoot, const SIMD::SRTMat43f& rootMatrix, Instance* pParent)
 {
 	if (pooledContainers_.empty())
 	{
@@ -291,7 +291,7 @@ InstanceContainer* ManagerImplemented::CreateInstanceContainer(
 
 	for (int i = 0; i < pEffectNode->GetChildrenCount(); i++)
 	{
-		auto child = CreateInstanceContainer(pEffectNode->GetChild(i), pGlobal, false, Matrix43(), nullptr);
+		auto child = CreateInstanceContainer(pEffectNode->GetChild(i), pGlobal, false, SIMD::SRTMat43f::Identity, nullptr);
 		if (child == nullptr)
 		{
 			ReleaseInstanceContainer(pContainer);
@@ -802,7 +802,7 @@ Matrix43 ManagerImplemented::GetMatrix(Handle handle)
 
 		if (mat != nullptr)
 		{
-			return ToStruct(*mat);
+			return ToStruct(mat->ToMat());
 		}
 	}
 
@@ -818,7 +818,7 @@ void ManagerImplemented::SetMatrix(Handle handle, const Matrix43& mat)
 
 		if (mat_ != nullptr)
 		{
-			(*mat_) = mat;
+			(*mat_) = SIMD::SRTMat43f::FromMat(mat);
 			drawSet.CopyMatrixFromInstanceToRoot();
 			drawSet.IsParameterChanged = true;
 		}
@@ -836,9 +836,7 @@ Vector3D ManagerImplemented::GetLocation(Handle handle)
 
 		if (mat_ != nullptr)
 		{
-			location.X = mat_->X.GetW();
-			location.Y = mat_->Y.GetW();
-			location.Z = mat_->Z.GetW();
+			location = SIMD::ToStruct(mat_->GetTranslation());
 		}
 	}
 
@@ -854,10 +852,7 @@ void ManagerImplemented::SetLocation(Handle handle, float x, float y, float z)
 
 		if (mat_ != nullptr)
 		{
-			mat_->X.SetW(x);
-			mat_->Y.SetW(y);
-			mat_->Z.SetW(z);
-
+			mat_->SetTranslation({x, y, z});
 			drawSet.CopyMatrixFromInstanceToRoot();
 			drawSet.IsParameterChanged = true;
 		}
@@ -878,9 +873,7 @@ void ManagerImplemented::AddLocation(Handle handle, const Vector3D& location)
 
 		if (mat_ != nullptr)
 		{
-			mat_->X.SetW(mat_->X.GetW() + location.X);
-			mat_->Y.SetW(mat_->Y.GetW() + location.Y);
-			mat_->Z.SetW(mat_->Z.GetW() + location.Z);
+			mat_->SetTranslation(mat_->GetTranslation() + SIMD::Vec3f{location});
 			drawSet.CopyMatrixFromInstanceToRoot();
 			drawSet.IsParameterChanged = true;
 		}
@@ -897,14 +890,14 @@ void ManagerImplemented::SetRotation(Handle handle, float x, float y, float z)
 
 		if (mat_ != nullptr)
 		{
-			SIMD::Mat43f r;
+			SIMD::SRTMat43f r;
 			SIMD::Vec3f s, t;
 
 			mat_->GetSRT(s, r, t);
 
-			r = SIMD::Mat43f::RotationZXY(z, x, y);
+			r = SIMD::SRTMat43f::RotationZXY(z, x, y);
 
-			*mat_ = SIMD::Mat43f::SRT(s, r, t);
+			*mat_ = SIMD::SRTMat43f::SRT(s, r, t);
 
 			drawSet.CopyMatrixFromInstanceToRoot();
 			drawSet.IsParameterChanged = true;
@@ -922,14 +915,14 @@ void ManagerImplemented::SetRotation(Handle handle, const Vector3D& axis, float 
 
 		if (mat_ != nullptr)
 		{
-			SIMD::Mat43f r;
+			SIMD::SRTMat43f r;
 			SIMD::Vec3f s, t;
 
 			mat_->GetSRT(s, r, t);
 
-			r = SIMD::Mat43f::RotationAxis(axis, angle);
+			r = SIMD::SRTMat43f::RotationAxis(axis, angle);
 
-			*mat_ = SIMD::Mat43f::SRT(s, r, t);
+			*mat_ = SIMD::SRTMat43f::SRT(s, r, t);
 
 			drawSet.CopyMatrixFromInstanceToRoot();
 			drawSet.IsParameterChanged = true;
@@ -947,14 +940,14 @@ void ManagerImplemented::SetScale(Handle handle, float x, float y, float z)
 
 		if (mat_ != nullptr)
 		{
-			SIMD::Mat43f r;
+			SIMD::SRTMat43f r;
 			SIMD::Vec3f s, t;
 
 			mat_->GetSRT(s, r, t);
 
 			s = SIMD::Vec3f(x, y, z);
 
-			*mat_ = SIMD::Mat43f::SRT(s, r, t);
+			*mat_ = SIMD::SRTMat43f::SRT(s, r, t);
 
 			drawSet.CopyMatrixFromInstanceToRoot();
 			drawSet.IsParameterChanged = true;
@@ -1027,7 +1020,7 @@ Matrix43 ManagerImplemented::GetBaseMatrix(Handle handle)
 {
 	if (m_DrawSets.count(handle) > 0)
 	{
-		return ToStruct(m_DrawSets[handle].BaseMatrix);
+		return ToStruct(m_DrawSets[handle].BaseMatrix.ToMat());
 	}
 
 	return Matrix43();
@@ -1037,7 +1030,7 @@ void ManagerImplemented::SetBaseMatrix(Handle handle, const Matrix43& mat)
 {
 	if (m_DrawSets.count(handle) > 0)
 	{
-		m_DrawSets[handle].BaseMatrix = mat;
+		m_DrawSets[handle].BaseMatrix = SIMD::SRTMat43f::FromMat(mat);
 		m_DrawSets[handle].DoUseBaseMatrix = true;
 		m_DrawSets[handle].IsParameterChanged = true;
 	}
@@ -1263,9 +1256,7 @@ void ManagerImplemented::Flip()
 
 					if (mat_ != nullptr)
 					{
-						location.X = mat_->X.GetW();
-						location.Y = mat_->Y.GetW();
-						location.Z = mat_->Z.GetW();
+						location = SIMD::ToStruct(mat_->GetTranslation());
 					}
 
 					ds.CullingObjectPointer->SetPosition(Culling3D::Vector3DF(location.X, location.Y, location.Z));
@@ -1975,7 +1966,7 @@ Handle ManagerImplemented::Play(const EffectRef& effect, const Vector3D& positio
 
 	auto& drawSet = m_DrawSets[handle];
 
-	drawSet.GlobalMatrix = SIMD::Mat43f::Translation(position);
+	drawSet.GlobalMatrix = SIMD::SRTMat43f::Translation(position);
 
 	drawSet.IsParameterChanged = true;
 	drawSet.StartFrame = startFrame;

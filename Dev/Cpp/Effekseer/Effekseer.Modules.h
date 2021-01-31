@@ -105,7 +105,7 @@ public:
 
 	struct InstanceParameter
 	{
-		SIMD::Mat43f SRTMatrix43;
+		SIMD::SRTMat43f SRTMatrix43;
 		Color AllColor;
 
 		// Lower left, Lower right, Upper left, Upper right
@@ -212,7 +212,7 @@ public:
 	{
 		int32_t InstanceCount;
 		int32_t InstanceIndex;
-		SIMD::Mat43f SRTMatrix43;
+		SIMD::SRTMat43f SRTMatrix43;
 		Color AllColor;
 
 		// Lower left, Lower right, Upper left, Upper right
@@ -325,7 +325,7 @@ public:
 
 	struct InstanceParameter
 	{
-		SIMD::Mat43f SRTMatrix43;
+		SIMD::SRTMat43f SRTMatrix43;
 		SIMD::Vec2f OuterLocation;
 		SIMD::Vec2f InnerLocation;
 		float ViewingAngleStart;
@@ -436,7 +436,7 @@ public:
 
 	struct InstanceParameter
 	{
-		SIMD::Mat43f SRTMatrix43;
+		SIMD::SRTMat43f SRTMatrix43;
 		RectF UV;
 
 		RectF AlphaUV;
@@ -545,7 +545,7 @@ public:
 	{
 		int32_t InstanceCount;
 		int32_t InstanceIndex;
-		SIMD::Mat43f SRTMatrix43;
+		SIMD::SRTMat43f SRTMatrix43;
 
 		Color ColorLeft;
 		Color ColorCenter;

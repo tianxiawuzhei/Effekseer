@@ -49,6 +49,8 @@ protected:
 	int32_t customData1Count_ = 0;
 	int32_t customData2Count_ = 0;
 
+	Effekseer::SIMD::Mat43f billboardMat_;
+
 public:
 	SpriteRendererBase(RENDERER* renderer)
 		: m_renderer(renderer)
@@ -130,7 +132,7 @@ protected:
 		state.EdgeColor[3] = param.BasicParameterPtr->EdgeColor[3];
 		state.EdgeColorScaling = param.BasicParameterPtr->EdgeColorScaling;
 		state.IsAlphaCuttoffEnabled = param.BasicParameterPtr->IsAlphaCutoffEnabled;
-		
+
 		state.Maginification = param.Maginification;
 
 		state.Distortion = param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::BackDistortion;
@@ -155,6 +157,8 @@ protected:
 		vertexCount_ = count * 4;
 
 		instances.clear();
+
+		CalcBillboardMatrix(billboardMat_, renderer->GetCameraFrontDirection());
 	}
 
 	void Rendering_(const efkSpriteNodeParam& parameter,
@@ -292,7 +296,7 @@ protected:
 
 			if (parameter.EnableViewOffset == true)
 			{
-				Effekseer::SIMD::Mat43f instMat = instanceParameter.SRTMatrix43;
+				Effekseer::SIMD::Mat43f instMat = instanceParameter.SRTMatrix43.ToMat();
 
 				ApplyViewOffset(instMat, camera, instanceParameter.ViewOffsetDistance);
 
@@ -300,7 +304,22 @@ protected:
 			}
 			else
 			{
-				CalcBillboard(parameter.Billboard, mat_rot, s, R, F, instanceParameter.SRTMatrix43, m_renderer->GetCameraFrontDirection());
+				if (instanceParameter.SRTMatrix43.isSeparated && parameter.Billboard == ::Effekseer::BillboardType::Billboard)
+				{
+					mat_rot = billboardMat_;
+					mat_rot.X.SetW(instanceParameter.SRTMatrix43.mat.X.GetW());
+					mat_rot.Y.SetW(instanceParameter.SRTMatrix43.mat.Y.GetW());
+					mat_rot.Z.SetW(instanceParameter.SRTMatrix43.mat.Z.GetW());
+
+					s = Effekseer::SIMD::Vec3f{
+						instanceParameter.SRTMatrix43.s,
+						instanceParameter.SRTMatrix43.s,
+						instanceParameter.SRTMatrix43.s};
+				}
+				else
+				{
+					CalcBillboard(parameter.Billboard, mat_rot, s, R, F, instanceParameter.SRTMatrix43.ToMat(), m_renderer->GetCameraFrontDirection());
+				}
 			}
 
 			for (int i = 0; i < 4; i++)
@@ -309,12 +328,15 @@ protected:
 				verteies[i].Pos.Y = verteies[i].Pos.Y * s.GetY();
 			}
 
-			ApplyDepthParameters(mat_rot,
-								 m_renderer->GetCameraFrontDirection(),
-								 m_renderer->GetCameraPosition(),
-								 s,
-								 parameter.DepthParameterPtr,
-								 parameter.IsRightHand);
+			if (parameter.DepthParameterPtr->IsDepthParameterEnabled)
+			{
+				ApplyDepthParameters(mat_rot,
+									 m_renderer->GetCameraFrontDirection(),
+									 m_renderer->GetCameraPosition(),
+									 s,
+									 parameter.DepthParameterPtr,
+									 parameter.IsRightHand);
+			}
 
 			TransformVertexes(verteies, 4, mat_rot);
 
@@ -335,7 +357,7 @@ protected:
 		}
 		else if (parameter.Billboard == ::Effekseer::BillboardType::Fixed)
 		{
-			auto mat = instanceParameter.SRTMatrix43;
+			auto mat = instanceParameter.SRTMatrix43.ToMat();
 
 			if (parameter.EnableViewOffset == true)
 			{

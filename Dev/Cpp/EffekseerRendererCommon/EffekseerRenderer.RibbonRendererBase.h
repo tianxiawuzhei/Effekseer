@@ -384,7 +384,7 @@ protected:
 
 				if (parameter.ViewpointDependent)
 				{
-					::Effekseer::SIMD::Mat43f mat = param.SRTMatrix43;
+					::Effekseer::SIMD::Mat43f mat = param.SRTMatrix43.ToMat();
 
 					if (parameter.EnableViewOffset == true)
 					{
@@ -438,7 +438,7 @@ protected:
 				}
 				else
 				{
-					::Effekseer::SIMD::Mat43f mat = param.SRTMatrix43;
+					::Effekseer::SIMD::Mat43f mat = param.SRTMatrix43.ToMat();
 
 					if (parameter.EnableViewOffset == true)
 					{
@@ -502,7 +502,7 @@ protected:
 
 				if (parameter.ViewpointDependent)
 				{
-					::Effekseer::SIMD::Mat43f mat = param.SRTMatrix43;
+					::Effekseer::SIMD::Mat43f mat = param.SRTMatrix43.ToMat();
 
 					if (parameter.EnableViewOffset == true)
 					{
@@ -568,7 +568,7 @@ protected:
 					}
 					else
 					{
-						::Effekseer::SIMD::Mat43f mat = param.SRTMatrix43;
+						::Effekseer::SIMD::Mat43f mat = param.SRTMatrix43.ToMat();
 
 						if (parameter.EnableViewOffset == true)
 						{

@@ -47,7 +47,7 @@ public:
 
 	struct InstanceParameter
 	{
-		SIMD::Mat43f SRTMatrix43;
+		SIMD::SRTMat43f SRTMatrix43;
 		Color AllColor;
 
 		// Lower left, Lower right, Upper left, Upper right

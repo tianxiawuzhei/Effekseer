@@ -4,7 +4,7 @@
 
 namespace Effekseer
 {
-	
+
 namespace SIMD
 {
 
@@ -12,6 +12,8 @@ namespace SIMD
 //
 //----------------------------------------------------------------------------------
 const Mat43f Mat43f::Identity = Mat43f(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0);
+
+const SRTMat43f SRTMat43f::Identity = SRTMat43f{Mat43f::Identity, 1.0f, true};
 
 //----------------------------------------------------------------------------------
 //
@@ -74,7 +76,7 @@ Mat43f Mat43f::GetRotation() const
 //----------------------------------------------------------------------------------
 Vec3f Mat43f::GetTranslation() const
 {
-	return Vec3f(X.GetW(), Y.GetW(), Z.GetW());
+	return {X.GetW(), Y.GetW(), Z.GetW()};
 }
 
 //----------------------------------------------------------------------------------
@@ -103,7 +105,7 @@ void Mat43f::GetSRT(Vec3f& s, Mat43f& r, Vec3f& t) const
 		r.Z = Z * rsq;
 	}
 
-	t = Vec3f(X.GetW(), Y.GetW(), Z.GetW());
+	t = Vec3f{X.GetW(), Y.GetW(), Z.GetW()};
 }
 
 //----------------------------------------------------------------------------------

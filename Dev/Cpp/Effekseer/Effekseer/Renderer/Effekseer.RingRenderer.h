@@ -51,7 +51,7 @@ public:
 
 	struct InstanceParameter
 	{
-		SIMD::Mat43f SRTMatrix43;
+		SIMD::SRTMat43f SRTMatrix43;
 		SIMD::Vec2f OuterLocation;
 		SIMD::Vec2f InnerLocation;
 		float ViewingAngleStart;

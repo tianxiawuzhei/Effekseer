@@ -27,7 +27,7 @@ InstanceGroup::InstanceGroup(ManagerImplemented* manager, EffectNodeImplemented*
 	, NextUsedByInstance(nullptr)
 	, NextUsedByContainer(nullptr)
 {
-	parentMatrix_ = SIMD::Mat43f::Identity;
+	parentMatrix_ = SIMD::SRTMat43f::Identity;
 }
 
 //----------------------------------------------------------------------------------
@@ -106,7 +106,7 @@ void InstanceGroup::Update(bool shown)
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void InstanceGroup::SetBaseMatrix(const SIMD::Mat43f& mat)
+void InstanceGroup::SetBaseMatrix(const SIMD::SRTMat43f& mat)
 {
 	for (auto instance : m_instances)
 	{
@@ -118,7 +118,7 @@ void InstanceGroup::SetBaseMatrix(const SIMD::Mat43f& mat)
 	}
 }
 
-void InstanceGroup::SetParentMatrix(const SIMD::Mat43f& mat)
+void InstanceGroup::SetParentMatrix(const SIMD::SRTMat43f& mat)
 {
 	TranslationParentBindType tType = m_effectNode->CommonValues.TranslationBindType;
 	BindType rType = m_effectNode->CommonValues.RotationBindType;
@@ -141,7 +141,7 @@ void InstanceGroup::SetParentMatrix(const SIMD::Mat43f& mat)
 	else
 	{
 		SIMD::Vec3f s, t;
-		SIMD::Mat43f r;
+		SIMD::SRTMat43f r;
 		mat.GetSRT(s, r, t);
 
 		if (tType == BindType::Always)
@@ -171,7 +171,7 @@ void InstanceGroup::SetParentMatrix(const SIMD::Mat43f& mat)
 		}
 		else if (rType == BindType::NotBind)
 		{
-			parentRotation_ = SIMD::Mat43f::Identity;
+			parentRotation_ = SIMD::SRTMat43f::Identity;
 		}
 
 		if (sType == BindType::Always)

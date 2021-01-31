@@ -5,6 +5,21 @@
 namespace EffekseerRenderer
 {
 
+void CalcBillboardMatrix(Effekseer::SIMD::Mat43f& dst, const ::Effekseer::SIMD::Vec3f& frontDirection)
+{
+	::Effekseer::SIMD::Vec3f R;
+	::Effekseer::SIMD::Vec3f F;
+	::Effekseer::SIMD::Vec3f Up(0.0f, 1.0f, 0.0f);
+
+	F = frontDirection;
+	R = ::Effekseer::SIMD::Vec3f::Cross(Up, F).Normalize();
+	auto U = ::Effekseer::SIMD::Vec3f::Cross(F, R).Normalize();
+
+	dst.X = {R.GetX(), U.GetX(), F.GetX(), 0.0f};
+	dst.Y = {R.GetY(), U.GetY(), F.GetY(), 0.0f};
+	dst.Z = {R.GetZ(), U.GetZ(), F.GetZ(), 0.0f};
+}
+
 void CalcBillboard(::Effekseer::BillboardType billboardType,
 				   Effekseer::SIMD::Mat43f& dst,
 				   ::Effekseer::SIMD::Vec3f& s,
@@ -373,8 +388,8 @@ void ApplyViewOffset(::Effekseer::SIMD::Mat43f& mat,
 	::Effekseer::SIMD::Vec3f ViewOffset = ::Effekseer::SIMD::Vec3f::Load(cameraMat.Values[3]) + -::Effekseer::SIMD::Vec3f::Load(cameraMat.Values[2]) * distance;
 
 	::Effekseer::SIMD::Vec3f localPos = mat.GetTranslation();
-	ViewOffset += (::Effekseer::SIMD::Vec3f::Load(cameraMat.Values[0]) * localPos.GetX()+ 
-				   ::Effekseer::SIMD::Vec3f::Load(cameraMat.Values[1]) * localPos.GetY() + 
+	ViewOffset += (::Effekseer::SIMD::Vec3f::Load(cameraMat.Values[0]) * localPos.GetX() +
+				   ::Effekseer::SIMD::Vec3f::Load(cameraMat.Values[1]) * localPos.GetY() +
 				   -::Effekseer::SIMD::Vec3f::Load(cameraMat.Values[2]) * localPos.GetZ());
 
 	mat.SetTranslation(ViewOffset);
@@ -390,8 +405,8 @@ void ApplyViewOffset(::Effekseer::SIMD::Mat44f& mat,
 	::Effekseer::SIMD::Vec3f ViewOffset = ::Effekseer::SIMD::Vec3f::Load(cameraMat.Values[3]) + -::Effekseer::SIMD::Vec3f::Load(cameraMat.Values[2]) * distance;
 
 	::Effekseer::SIMD::Vec3f localPos = mat.GetTranslation();
-	ViewOffset += (::Effekseer::SIMD::Vec3f::Load(cameraMat.Values[0]) * localPos.GetX()+ 
-				   ::Effekseer::SIMD::Vec3f::Load(cameraMat.Values[1]) * localPos.GetY() + 
+	ViewOffset += (::Effekseer::SIMD::Vec3f::Load(cameraMat.Values[0]) * localPos.GetX() +
+				   ::Effekseer::SIMD::Vec3f::Load(cameraMat.Values[1]) * localPos.GetY() +
 				   -::Effekseer::SIMD::Vec3f::Load(cameraMat.Values[2]) * localPos.GetZ());
 
 	mat.SetTranslation(ViewOffset);

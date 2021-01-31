@@ -143,7 +143,7 @@ void Instance::GenerateChildrenInRequired()
 				auto newInstance = group->CreateInstance();
 				if (newInstance != nullptr)
 				{
-					SIMD::Mat43f rootMatrix = SIMD::Mat43f::Identity;
+					SIMD::SRTMat43f rootMatrix = SIMD::SRTMat43f::Identity;
 
 					newInstance->Initialize(this, m_generatedChildrenCount[i], rootMatrix);
 				}
@@ -188,7 +188,7 @@ eInstanceState Instance::GetState() const
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-const SIMD::Mat43f& Instance::GetGlobalMatrix43() const
+const SIMD::SRTMat43f& Instance::GetGlobalMatrix43() const
 {
 	return m_GlobalMatrix43;
 }
@@ -196,7 +196,7 @@ const SIMD::Mat43f& Instance::GetGlobalMatrix43() const
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Instance::Initialize(Instance* parent, int32_t instanceNumber, const SIMD::Mat43f& globalMatrix)
+void Instance::Initialize(Instance* parent, int32_t instanceNumber, const SIMD::SRTMat43f& globalMatrix)
 {
 	assert(this->m_pContainer != nullptr);
 
@@ -280,10 +280,10 @@ void Instance::FirstUpdate()
 	if (m_pParent == nullptr)
 	{
 		// initialize SRT
-		m_GenerationLocation = SIMD::Mat43f::Identity;
+		m_GenerationLocation = SIMD::SRTMat43f::Identity;
 
 		// initialize Parent
-		m_ParentMatrix = SIMD::Mat43f::Identity;
+		m_ParentMatrix = SIMD::SRTMat43f::Identity;
 
 		// Generate zero frame effect
 
@@ -307,9 +307,9 @@ void Instance::FirstUpdate()
 	// calculate parent matrixt to get matrix
 	m_pParent->CalculateMatrix(0);
 
-	const SIMD::Mat43f& parentMatrix = m_pParent->GetGlobalMatrix43();
+	const auto& parentMatrix = m_pParent->GetGlobalMatrix43();
 	forceField_.Reset();
-	m_GenerationLocation = SIMD::Mat43f::Identity;
+	m_GenerationLocation = SIMD::SRTMat43f::Identity;
 
 	// 親の初期化
 	if (parameter->CommonValues.TranslationBindType == BindType::WhenCreating ||
@@ -645,7 +645,7 @@ void Instance::FirstUpdate()
 	if (m_pEffectNode->GenerationLocation.type == ParameterGenerationLocation::TYPE_POINT)
 	{
 		SIMD::Vec3f p = m_pEffectNode->GenerationLocation.point.location.getValue(rand);
-		m_GenerationLocation = SIMD::Mat43f::Translation(p.GetX(), p.GetY(), p.GetZ());
+		m_GenerationLocation = SIMD::SRTMat43f::Translation(p.GetX(), p.GetY(), p.GetZ());
 	}
 	else if (m_pEffectNode->GenerationLocation.type == ParameterGenerationLocation::TYPE_LINE)
 	{
@@ -658,7 +658,7 @@ void Instance::FirstUpdate()
 
 		if (dir.IsZero())
 		{
-			m_GenerationLocation = SIMD::Mat43f::Translation(0, 0, 0);
+			m_GenerationLocation = SIMD::SRTMat43f::Translation(0, 0, 0);
 		}
 		else
 		{
@@ -706,38 +706,36 @@ void Instance::FirstUpdate()
 
 			if (m_pEffectNode->GenerationLocation.EffectsRotation)
 			{
-				m_GenerationLocation.X.SetX(xdir.GetX());
-				m_GenerationLocation.Y.SetX(xdir.GetY());
-				m_GenerationLocation.Z.SetX(xdir.GetZ());
+				m_GenerationLocation.mat.X.SetX(xdir.GetX());
+				m_GenerationLocation.mat.Y.SetX(xdir.GetY());
+				m_GenerationLocation.mat.Z.SetX(xdir.GetZ());
 
-				m_GenerationLocation.X.SetY(ydir.GetX());
-				m_GenerationLocation.Y.SetY(ydir.GetY());
-				m_GenerationLocation.Z.SetY(ydir.GetZ());
+				m_GenerationLocation.mat.X.SetY(ydir.GetX());
+				m_GenerationLocation.mat.Y.SetY(ydir.GetY());
+				m_GenerationLocation.mat.Z.SetY(ydir.GetZ());
 
-				m_GenerationLocation.X.SetZ(zdir.GetX());
-				m_GenerationLocation.Y.SetZ(zdir.GetY());
-				m_GenerationLocation.Z.SetZ(zdir.GetZ());
+				m_GenerationLocation.mat.X.SetZ(zdir.GetX());
+				m_GenerationLocation.mat.Y.SetZ(zdir.GetY());
+				m_GenerationLocation.mat.Z.SetZ(zdir.GetZ());
 			}
 			else
 			{
-				m_GenerationLocation = SIMD::Mat43f::Identity;
+				m_GenerationLocation = SIMD::SRTMat43f::Identity;
 			}
 
-			m_GenerationLocation.X.SetW(s.GetX());
-			m_GenerationLocation.Y.SetW(s.GetY());
-			m_GenerationLocation.Z.SetW(s.GetZ());
+			m_GenerationLocation.SetTranslation(s);
 		}
 	}
 	else if (m_pEffectNode->GenerationLocation.type == ParameterGenerationLocation::TYPE_SPHERE)
 	{
-		SIMD::Mat43f mat_x = SIMD::Mat43f::RotationX(m_pEffectNode->GenerationLocation.sphere.rotation_x.getValue(rand));
-		SIMD::Mat43f mat_y = SIMD::Mat43f::RotationY(m_pEffectNode->GenerationLocation.sphere.rotation_y.getValue(rand));
+		auto mat_x = SIMD::SRTMat43f::RotationX(m_pEffectNode->GenerationLocation.sphere.rotation_x.getValue(rand));
+		auto mat_y = SIMD::SRTMat43f::RotationY(m_pEffectNode->GenerationLocation.sphere.rotation_y.getValue(rand));
 		float r = m_pEffectNode->GenerationLocation.sphere.radius.getValue(rand);
-		m_GenerationLocation = SIMD::Mat43f::Translation(0, r, 0) * mat_x * mat_y;
+		m_GenerationLocation = SIMD::SRTMat43f::Translation(0, r, 0) * mat_x * mat_y;
 	}
 	else if (m_pEffectNode->GenerationLocation.type == ParameterGenerationLocation::TYPE_MODEL)
 	{
-		m_GenerationLocation = SIMD::Mat43f::Identity;
+		m_GenerationLocation = SIMD::SRTMat43f::Identity;
 		ModelRef model = nullptr;
 		const ParameterGenerationLocation::eModelType type = m_pEffectNode->GenerationLocation.model.type;
 
@@ -791,28 +789,28 @@ void Instance::FirstUpdate()
 														((EffectImplemented*)m_pEffectNode->GetEffect())->GetMaginification());
 				}
 
-				m_GenerationLocation = SIMD::Mat43f::Translation(emitter.Position);
+				m_GenerationLocation = SIMD::SRTMat43f::Translation(emitter.Position);
 
 				if (m_pEffectNode->GenerationLocation.EffectsRotation)
 				{
-					m_GenerationLocation.X.SetX(emitter.Binormal.X);
-					m_GenerationLocation.Y.SetX(emitter.Binormal.Y);
-					m_GenerationLocation.Z.SetX(emitter.Binormal.Z);
+					m_GenerationLocation.mat.X.SetX(emitter.Binormal.X);
+					m_GenerationLocation.mat.Y.SetX(emitter.Binormal.Y);
+					m_GenerationLocation.mat.Z.SetX(emitter.Binormal.Z);
 
-					m_GenerationLocation.X.SetY(emitter.Tangent.X);
-					m_GenerationLocation.Y.SetY(emitter.Tangent.Y);
-					m_GenerationLocation.Z.SetY(emitter.Tangent.Z);
+					m_GenerationLocation.mat.X.SetY(emitter.Tangent.X);
+					m_GenerationLocation.mat.Y.SetY(emitter.Tangent.Y);
+					m_GenerationLocation.mat.Z.SetY(emitter.Tangent.Z);
 
-					m_GenerationLocation.X.SetZ(emitter.Normal.X);
-					m_GenerationLocation.Y.SetZ(emitter.Normal.Y);
-					m_GenerationLocation.Z.SetZ(emitter.Normal.Z);
+					m_GenerationLocation.mat.X.SetZ(emitter.Normal.X);
+					m_GenerationLocation.mat.Y.SetZ(emitter.Normal.Y);
+					m_GenerationLocation.mat.Z.SetZ(emitter.Normal.Z);
 				}
 			}
 		}
 	}
 	else if (m_pEffectNode->GenerationLocation.type == ParameterGenerationLocation::TYPE_CIRCLE)
 	{
-		m_GenerationLocation = SIMD::Mat43f::Identity;
+		m_GenerationLocation = SIMD::SRTMat43f::Identity;
 		float radius = m_pEffectNode->GenerationLocation.circle.radius.getValue(rand);
 		float start = m_pEffectNode->GenerationLocation.circle.angle_start.getValue(rand);
 		float end = m_pEffectNode->GenerationLocation.circle.angle_end.getValue(rand);
@@ -841,13 +839,13 @@ void Instance::FirstUpdate()
 		switch (m_pEffectNode->GenerationLocation.circle.axisDirection)
 		{
 		case ParameterGenerationLocation::AxisType::X:
-			m_GenerationLocation = SIMD::Mat43f::Translation(0, 0, radius) * SIMD::Mat43f::RotationX(angle);
+			m_GenerationLocation = SIMD::SRTMat43f::Translation(0, 0, radius) * SIMD::SRTMat43f::RotationX(angle);
 			break;
 		case ParameterGenerationLocation::AxisType::Y:
-			m_GenerationLocation = SIMD::Mat43f::Translation(radius, 0, 0) * SIMD::Mat43f::RotationY(angle);
+			m_GenerationLocation = SIMD::SRTMat43f::Translation(radius, 0, 0) * SIMD::SRTMat43f::RotationY(angle);
 			break;
 		case ParameterGenerationLocation::AxisType::Z:
-			m_GenerationLocation = SIMD::Mat43f::Translation(0, radius, 0) * SIMD::Mat43f::RotationZ(angle);
+			m_GenerationLocation = SIMD::SRTMat43f::Translation(0, radius, 0) * SIMD::SRTMat43f::RotationZ(angle);
 			break;
 		}
 	}
@@ -1465,7 +1463,7 @@ void Instance::CalculateMatrix(float deltaFrame)
 		{
 			// the center of force field depends Spawn method
 			// It should be used a result of past frame
-			auto location = SIMD::Mat43f::Translation(localPosition);
+			auto location = SIMD::SRTMat43f::Translation(localPosition);
 			location *= m_GenerationLocation;
 			currentLocalPosition = location.GetTranslation();
 		}
@@ -1485,40 +1483,40 @@ void Instance::CalculateMatrix(float deltaFrame)
 		m_pEffectNode->UpdateRenderedInstance(*this, m_pManager);
 
 		// 回転行列の作成
-		SIMD::Mat43f MatRot;
+		SIMD::SRTMat43f MatRot;
 		if (m_pEffectNode->RotationType == ParameterRotationType_Fixed || m_pEffectNode->RotationType == ParameterRotationType_PVA ||
 			m_pEffectNode->RotationType == ParameterRotationType_Easing || m_pEffectNode->RotationType == ParameterRotationType_FCurve)
 		{
-			MatRot = SIMD::Mat43f::RotationZXY(localAngle.GetZ(), localAngle.GetX(), localAngle.GetY());
+			MatRot = SIMD::SRTMat43f::RotationZXY(localAngle.GetZ(), localAngle.GetX(), localAngle.GetY());
 		}
 		else if (m_pEffectNode->RotationType == ParameterRotationType_AxisPVA ||
 				 m_pEffectNode->RotationType == ParameterRotationType_AxisEasing)
 		{
 			SIMD::Vec3f axis = rotation_values.axis.axis;
 
-			MatRot = SIMD::Mat43f::RotationAxis(axis, rotation_values.axis.rotation);
+			MatRot = SIMD::SRTMat43f::RotationAxis(axis, rotation_values.axis.rotation);
 		}
 		else
 		{
-			MatRot = SIMD::Mat43f::Identity;
+			MatRot = SIMD::SRTMat43f::Identity;
 		}
 
 		// Update matrix
 		if (m_pEffectNode->GenerationLocation.EffectsRotation)
 		{
-			m_GlobalMatrix43 = SIMD::Mat43f::SRT(localScaling, MatRot, localPosition);
+			m_GlobalMatrix43 = SIMD::SRTMat43f::SRT(localScaling, MatRot, localPosition);
 			assert(m_GlobalMatrix43.IsValid());
 
 			m_GlobalMatrix43 *= m_GenerationLocation;
 			assert(m_GlobalMatrix43.IsValid());
 
-			m_GlobalMatrix43 *= SIMD::Mat43f::Translation(forceField_.ModifyLocation);
+			m_GlobalMatrix43 *= SIMD::SRTMat43f::Translation(forceField_.ModifyLocation);
 		}
 		else
 		{
 			localPosition += forceField_.ModifyLocation;
 
-			m_GlobalMatrix43 = SIMD::Mat43f::SRT(localScaling, MatRot, localPosition);
+			m_GlobalMatrix43 = SIMD::SRTMat43f::SRT(localScaling, MatRot, localPosition);
 			assert(m_GlobalMatrix43.IsValid());
 		}
 
@@ -1532,7 +1530,7 @@ void Instance::CalculateMatrix(float deltaFrame)
 		{
 			InstanceGlobal* instanceGlobal = m_pContainer->GetRootInstance();
 			forceField_.UpdateGlobal(m_pEffectNode->LocalForceField, prevGlobalPosition_, m_pEffectNode->GetEffect()->GetMaginification(), instanceGlobal->GetTargetLocation(), deltaFrame);
-			SIMD::Mat43f MatTraGlobal = SIMD::Mat43f::Translation(forceField_.GlobalModifyLocation);
+			const auto MatTraGlobal = SIMD::SRTMat43f::Translation(forceField_.GlobalModifyLocation);
 			m_GlobalMatrix43 *= MatTraGlobal;
 		}
 
@@ -1571,7 +1569,7 @@ void Instance::CalculateParentMatrix(float deltaFrame)
 		else
 		{
 			SIMD::Vec3f s, t;
-			SIMD::Mat43f r;
+			SIMD::SRTMat43f r;
 
 			if (tType == BindType::WhenCreating || tType == TranslationParentBindType::WhenCreating_FollowParent)
 				t = m_ParentMatrix.GetTranslation();
@@ -1588,7 +1586,7 @@ void Instance::CalculateParentMatrix(float deltaFrame)
 			else
 				s = ownGroup_->GetParentScale();
 
-			m_ParentMatrix = SIMD::Mat43f::SRT(s, r, t);
+			m_ParentMatrix = SIMD::SRTMat43f::SRT(s, r, t);
 			assert(m_ParentMatrix.IsValid());
 		}
 	}

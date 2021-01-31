@@ -53,7 +53,7 @@ public:
 	{
 		int32_t InstanceCount;
 		int32_t InstanceIndex;
-		SIMD::Mat43f SRTMatrix43;
+		SIMD::SRTMat43f SRTMatrix43;
 		Color AllColor;
 
 		// Lower left, Lower right, Upper left, Upper right

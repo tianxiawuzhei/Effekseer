@@ -17,6 +17,7 @@ namespace SIMD
 
 struct Mat43f;
 struct Mat44f;
+struct SRTMat43f;
 
 struct Vec3f
 {
@@ -113,6 +114,7 @@ struct Vec3f
 	static bool Equal(const Vec3f& lhs, const Vec3f& rhs, float epsilon = DefaultEpsilon);
 	static Vec3f Transform(const Vec3f& lhs, const Mat43f& rhs);
 	static Vec3f Transform(const Vec3f& lhs, const Mat44f& rhs);
+	static Vec3f Transform(const Vec3f& lhs, const SRTMat43f& rhs);
 };
 
 inline Vec3f operator-(const Vec3f& i)

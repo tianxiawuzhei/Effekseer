@@ -612,6 +612,8 @@ struct StrideView
 	}
 };
 
+void CalcBillboardMatrix(Effekseer::SIMD::Mat43f& dst, const ::Effekseer::SIMD::Vec3f& frontDirection);
+
 void CalcBillboard(::Effekseer::BillboardType billboardType,
 				   Effekseer::SIMD::Mat43f& dst,
 				   ::Effekseer::SIMD::Vec3f& s,
