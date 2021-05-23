@@ -988,6 +988,15 @@ void Instance::Update(float deltaFrame, bool shown)
 		{
 			killed = !AreChildrenActive();
 		}
+ 
+		// remove by trigger
+		if (!killed && m_pEffectNode->TriggerParam.ToRemove.type != TriggerType::None)
+		{
+			if (GetInstanceGlobal()->GetInputTriggerCount(m_pEffectNode->TriggerParam.ToRemove.index) > 0)
+			{
+				killed = true;
+			}
+		}
 	}
 
 	{
