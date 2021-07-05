@@ -19,6 +19,16 @@ namespace EffekseerRendererGL
 class VertexBuffer : public DeviceObject, public ::EffekseerRenderer::VertexBufferBase
 {
 private:
+
+	struct RingBuffer
+	{
+		GLuint id;
+		size_t size;
+	};
+
+	std::vector<RingBuffer> buffers_;
+	size_t bufferOffset_;
+
 	GLuint m_buffer;
 
 	uint32_t m_vertexRingStart;

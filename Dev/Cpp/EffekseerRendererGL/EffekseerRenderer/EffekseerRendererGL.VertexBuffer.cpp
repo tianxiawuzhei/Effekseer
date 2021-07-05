@@ -30,6 +30,16 @@ VertexBuffer::VertexBuffer(const Backend::GraphicsDeviceRef& graphicsDevice, int
 	GLExt::glBufferData(GL_ARRAY_BUFFER, m_size, m_resource, GL_STREAM_DRAW);
 #endif // !__ANDROID__
 
+	buffers_.resize(40);
+
+	for (auto& b : buffers_)
+	{
+		GLExt::glGenBuffers(1, &b.id);
+		GLExt::glBindBuffer(GL_ARRAY_BUFFER, b.id);
+		GLExt::glBufferData(GL_ARRAY_BUFFER, m_size, m_resource, GL_DYNAMIC_DRAW);	
+	}
+	bufferOffset_ = 0;
+
 	GLExt::glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -39,6 +49,12 @@ VertexBuffer::VertexBuffer(const Backend::GraphicsDeviceRef& graphicsDevice, int
 VertexBuffer::~VertexBuffer()
 {
 	GLExt::glDeleteBuffers(1, &m_buffer);
+
+	for (auto& b : buffers_)
+	{
+		GLExt::glDeleteBuffers(1, &b.id);
+	}
+
 	delete[] m_resource;
 }
 
@@ -52,6 +68,11 @@ VertexBuffer* VertexBuffer::Create(const Backend::GraphicsDeviceRef& graphicsDev
 
 GLuint VertexBuffer::GetInterface()
 {
+	if (buffers_.size() > 0)
+	{
+		return buffers_[bufferOffset_].id;
+	}
+
 	return m_buffer;
 }
 
@@ -151,7 +172,11 @@ void VertexBuffer::Unlock()
 {
 	assert(m_isLock || m_ringBufferLock);
 
-	GLExt::glBindBuffer(GL_ARRAY_BUFFER, m_buffer);
+	bufferOffset_++;
+	bufferOffset_ %= buffers_.size();
+	GLExt::glBindBuffer(GL_ARRAY_BUFFER, buffers_[bufferOffset_].id);
+
+	//GLExt::glBindBuffer(GL_ARRAY_BUFFER, m_buffer);
 
 	if (GLExt::IsSupportedBufferRange() && m_vertexRingStart > 0)
 	{
@@ -174,6 +199,7 @@ void VertexBuffer::Unlock()
 		}
 #endif
 
+		/*
 		if (GLExt::IsSupportedMapBuffer() && !avoidIOS122)
 		{
 #ifdef __ANDROID__
@@ -203,18 +229,19 @@ void VertexBuffer::Unlock()
 			}
 		}
 		else
+			*/
 		{
 #ifdef __ANDROID__
 			GLExt::glBufferData(GL_ARRAY_BUFFER, m_size, m_resource, GL_STREAM_DRAW);
 #else
-			if (m_vertexRingStart > 0)
-			{
+			//if (m_vertexRingStart > 0)
+			//{
 				GLExt::glBufferSubData(GL_ARRAY_BUFFER, m_vertexRingStart, m_offset, m_resource);
-			}
-			else
-			{
-				GLExt::glBufferData(GL_ARRAY_BUFFER, m_size, m_resource, GL_STREAM_DRAW);
-			}
+			//}
+			//else
+			//{
+			//	GLExt::glBufferData(GL_ARRAY_BUFFER, m_size, m_resource, GL_DYNAMIC_DRAW);
+			//}
 #endif
 		}
 	}
@@ -232,6 +259,11 @@ void VertexBuffer::Unlock()
 
 bool VertexBuffer::IsValid()
 {
+	if (buffers_.size() > 0)
+	{
+		return true;
+	}
+
 	return m_buffer != 0;
 }
 
