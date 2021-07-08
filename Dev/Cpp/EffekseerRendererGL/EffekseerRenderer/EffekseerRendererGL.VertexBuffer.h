@@ -21,15 +21,17 @@ class VertexBuffer : public DeviceObject, public ::EffekseerRenderer::VertexBuff
 private:
 	GLuint m_buffer;
 
+	int currentSize_ = 0;
+	int initialSize_ = 0;
 	uint32_t m_vertexRingStart;
 	bool m_ringBufferLock;
 
-	VertexBuffer(const Backend::GraphicsDeviceRef& graphicsDevice, int size, bool isDynamic);
+	VertexBuffer(const Backend::GraphicsDeviceRef& graphicsDevice, int initialSize, int size, bool isDynamic);
 
 public:
 	virtual ~VertexBuffer();
 
-	static VertexBuffer* Create(const Backend::GraphicsDeviceRef& graphicsDevice, int size, bool isDynamic);
+	static VertexBuffer* Create(const Backend::GraphicsDeviceRef& graphicsDevice, int initialSize, int size, bool isDynamic);
 
 	GLuint GetInterface();
 
