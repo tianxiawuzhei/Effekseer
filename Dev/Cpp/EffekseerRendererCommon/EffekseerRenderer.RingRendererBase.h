@@ -194,6 +194,11 @@ protected:
 
 		materialType_ = param.BasicParameterPtr->MaterialType;
 
+		if (CanSingleRendering())
+		{
+			state.SpecialCameraMat = renderer->GetStandardRenderer()->AllocateSpecialCameraMat();
+		}
+
 		renderer->GetStandardRenderer()->UpdateStateAndRenderingIfRequired(state);
 		renderer->GetStandardRenderer()->BeginRenderingAndRenderingIfRequired(count * singleVertexCount, stride_, (void*&)m_ringBufferData);
 
@@ -717,8 +722,9 @@ protected:
 		if (CanSingleRendering())
 		{
 			::Effekseer::SIMD::Mat44f mat = m_singleRenderingMatrix * renderer->GetCameraMatrix();
+			const auto& state = m_renderer->GetStandardRenderer()->GetState();
 
-			renderer->GetStandardRenderer()->Rendering(mat, renderer->GetProjectionMatrix());
+			renderer->GetStandardRenderer()->SetSpecialCameraMat(state.SpecialCameraMat, mat);
 		}
 
 		if (param.DepthParameterPtr->ZSort != Effekseer::ZSortType::None && !CanSingleRendering())

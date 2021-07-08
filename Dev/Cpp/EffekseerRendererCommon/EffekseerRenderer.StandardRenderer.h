@@ -23,6 +23,7 @@ namespace EffekseerRenderer
 
 struct StandardRendererState
 {
+	int SpecialCameraMat = -1;
 	bool DepthTest;
 	bool DepthWrite;
 	bool Distortion;
@@ -69,6 +70,7 @@ struct StandardRendererState
 
 	StandardRendererState()
 	{
+		SpecialCameraMat = -1;
 		DepthTest = false;
 		DepthWrite = false;
 		Distortion = false;
@@ -107,6 +109,9 @@ struct StandardRendererState
 
 	bool operator!=(const StandardRendererState state)
 	{
+		if (SpecialCameraMat != state.SpecialCameraMat)
+			return true;
+
 		if (Collector != state.Collector)
 			return true;
 
@@ -212,7 +217,7 @@ struct StandardRendererState
 		// TODO : refactor in 1.7
 		if (renderer->GetExternalShaderSettings() != nullptr)
 		{
-			AlphaBlend = renderer->GetExternalShaderSettings()->Blend;		
+			AlphaBlend = renderer->GetExternalShaderSettings()->Blend;
 		}
 		else if (renderer->GetRenderMode() == ::Effekseer::RenderMode::Wireframe)
 		{
@@ -274,17 +279,14 @@ class StandardRenderer
 {
 private:
 	RENDERER* m_renderer;
-
-	Effekseer::Backend::TextureRef m_texture;
-
 	StandardRendererState m_state;
 
 	//! WebAssembly requires a much time to resize std::vector (in a profiler at least) so reduce to call resize
 	std::vector<uint8_t> vertexCaches_;
 	int32_t vertexCacheOffset_ = 0;
-
 	int32_t squareMaxSize_ = 0;
-	RendererShaderType renderingMode_ = RendererShaderType::Unlit;
+
+	Effekseer::CustomAlignedVector<Effekseer::SIMD::Mat44f> specialCameraMat_;
 
 	void ColorToFloat4(::Effekseer::Color color, float fc[4])
 	{
@@ -312,35 +314,48 @@ public:
 	{
 	}
 
-	int32_t CalculateCurrentStride() const
+	int32_t AllocateSpecialCameraMat()
 	{
+		auto id = specialCameraMat_.size();
+		specialCameraMat_.resize(specialCameraMat_.size() + 1);
+		return static_cast<int>(id);
+	}
+
+	void SetSpecialCameraMat(int32_t id, const Effekseer::SIMD::Mat44f& mat)
+	{
+		specialCameraMat_.at(id) = mat;
+	}
+
+	static int32_t CalculateCurrentStride(const StandardRendererState& state)
+	{
+		const auto renderingMode = state.Collector.ShaderType;
 		size_t stride = 0;
-		if (renderingMode_ == RendererShaderType::Material)
+		if (renderingMode == RendererShaderType::Material)
 		{
 			stride = sizeof(DynamicVertex);
-			stride += (m_state.CustomData1Count + m_state.CustomData2Count) * sizeof(float);
+			stride += (state.CustomData1Count + state.CustomData2Count) * sizeof(float);
 		}
-		else if (renderingMode_ == RendererShaderType::Lit)
+		else if (renderingMode == RendererShaderType::Lit)
 		{
 			stride = sizeof(LightingVertex);
 		}
-		else if (renderingMode_ == RendererShaderType::BackDistortion)
+		else if (renderingMode == RendererShaderType::BackDistortion)
 		{
 			stride = sizeof(LightingVertex);
 		}
-		else if (renderingMode_ == RendererShaderType::Unlit)
+		else if (renderingMode == RendererShaderType::Unlit)
 		{
 			stride = sizeof(SimpleVertex);
 		}
-		else if (renderingMode_ == RendererShaderType::AdvancedLit)
+		else if (renderingMode == RendererShaderType::AdvancedLit)
 		{
 			stride = sizeof(AdvancedLightingVertex);
 		}
-		else if (renderingMode_ == RendererShaderType::AdvancedBackDistortion)
+		else if (renderingMode == RendererShaderType::AdvancedBackDistortion)
 		{
 			stride = sizeof(AdvancedLightingVertex);
 		}
-		else if (renderingMode_ == RendererShaderType::AdvancedUnlit)
+		else if (renderingMode == RendererShaderType::AdvancedUnlit)
 		{
 			stride = sizeof(AdvancedSimpleVertex);
 		}
@@ -356,13 +371,11 @@ public:
 		}
 
 		m_state = state;
-
-		renderingMode_ = m_state.Collector.ShaderType;
 	}
 
 	void BeginRenderingAndRenderingIfRequired(int32_t count, int& stride, void*& data)
 	{
-		stride = CalculateCurrentStride();
+		stride = CalculateCurrentStride(m_state);
 
 		const int32_t requiredSize = count * stride;
 		{
@@ -397,12 +410,25 @@ public:
 		return m_state;
 	}
 
-	void Rendering(const Effekseer::SIMD::Mat44f& mCamera, const Effekseer::SIMD::Mat44f& mProj)
+	void Rendering()
 	{
 		if (vertexCacheOffset_ == 0)
 			return;
 
-		int32_t stride = CalculateCurrentStride();
+		Effekseer::SIMD::Mat44f mCamera;
+
+		if (m_state.SpecialCameraMat >= 0)
+		{
+			mCamera = specialCameraMat_[m_state.SpecialCameraMat];
+		}
+		else
+		{
+			mCamera = m_renderer->GetCameraMatrix();
+		}
+
+		const auto& mProj = m_renderer->GetProjectionMatrix();
+
+		int32_t stride = CalculateCurrentStride(m_state);
 
 		int32_t passNum = 1;
 
@@ -431,7 +457,7 @@ public:
 					renderBufferSize = (renderVertexMaxSize / (stride * 4)) * (stride * 4);
 				}
 
-				Rendering_(mCamera, mProj, offset, renderBufferSize, stride, passInd);
+				Rendering_(mCamera, mProj, offset, renderBufferSize, stride, passInd, m_state);
 
 				offset += renderBufferSize;
 
@@ -441,6 +467,7 @@ public:
 		}
 
 		vertexCacheOffset_ = 0;
+		specialCameraMat_.clear();
 	}
 
 	void Rendering_(const Effekseer::SIMD::Mat44f& mCamera,
@@ -448,9 +475,10 @@ public:
 					int32_t bufferOffset,
 					int32_t bufferSize,
 					int32_t stride,
-					int32_t renderPass)
+					int32_t renderPass,
+					const StandardRendererState& renderState)
 	{
-		bool isBackgroundRequired = m_state.Collector.IsBackgroundRequiredOnFirstPass && renderPass == 0;
+		bool isBackgroundRequired = renderState.Collector.IsBackgroundRequiredOnFirstPass && renderPass == 0;
 
 		if (isBackgroundRequired)
 		{
@@ -469,27 +497,27 @@ public:
 			return;
 		}
 
-		auto textures = m_state.Collector.Textures;
+		auto textures = renderState.Collector.Textures;
 		if (isBackgroundRequired)
 		{
-			textures[m_state.Collector.BackgroundIndex] = m_renderer->GetBackground();
+			textures[renderState.Collector.BackgroundIndex] = m_renderer->GetBackground();
 		}
 
 		::Effekseer::Backend::TextureRef depthTexture = nullptr;
 		::EffekseerRenderer::DepthReconstructionParameter reconstructionParam;
 		m_renderer->GetImpl()->GetDepth(depthTexture, reconstructionParam);
 
-		if (m_state.Collector.IsDepthRequired)
+		if (renderState.Collector.IsDepthRequired)
 		{
-			if (depthTexture == nullptr || (m_state.SoftParticleDistanceFar == 0.0f &&
-											m_state.SoftParticleDistanceNear == 0.0f &&
-											m_state.SoftParticleDistanceNearOffset == 0.0f &&
-											m_state.Collector.ShaderType != RendererShaderType::Material))
+			if (depthTexture == nullptr || (renderState.SoftParticleDistanceFar == 0.0f &&
+											renderState.SoftParticleDistanceNear == 0.0f &&
+											renderState.SoftParticleDistanceNearOffset == 0.0f &&
+											renderState.Collector.ShaderType != RendererShaderType::Material))
 			{
 				depthTexture = m_renderer->GetImpl()->GetProxyTexture(EffekseerRenderer::ProxyTextureType::White);
 			}
 
-			textures[m_state.Collector.DepthIndex] = depthTexture;
+			textures[renderState.Collector.DepthIndex] = depthTexture;
 		}
 
 		int32_t vertexSize = bufferSize;
@@ -513,12 +541,12 @@ public:
 
 		SHADER* shader_ = nullptr;
 
-		bool distortion = m_state.Distortion;
+		bool distortion = renderState.Distortion;
 		bool renderDistortedBackground = false;
 
-		if (m_state.Collector.ShaderType == RendererShaderType::Material)
+		if (renderState.Collector.ShaderType == RendererShaderType::Material)
 		{
-			if (m_state.Collector.MaterialDataPtr->IsRefractionRequired)
+			if (renderState.Collector.MaterialDataPtr->IsRefractionRequired)
 			{
 				if (renderPass == 0)
 				{
@@ -527,17 +555,17 @@ public:
 						return;
 					}
 
-					shader_ = (SHADER*)m_state.Collector.MaterialDataPtr->RefractionUserPtr;
+					shader_ = (SHADER*)renderState.Collector.MaterialDataPtr->RefractionUserPtr;
 					renderDistortedBackground = true;
 				}
 				else
 				{
-					shader_ = (SHADER*)m_state.Collector.MaterialDataPtr->UserPtr;
+					shader_ = (SHADER*)renderState.Collector.MaterialDataPtr->UserPtr;
 				}
 			}
 			else
 			{
-				shader_ = (SHADER*)m_state.Collector.MaterialDataPtr->UserPtr;
+				shader_ = (SHADER*)renderState.Collector.MaterialDataPtr->UserPtr;
 			}
 
 			// validate
@@ -546,14 +574,14 @@ public:
 		}
 		else
 		{
-			shader_ = m_renderer->GetShader(m_state.Collector.ShaderType);
+			shader_ = m_renderer->GetShader(renderState.Collector.ShaderType);
 		}
 
 		RenderStateBase::State& state = m_renderer->GetRenderState()->Push();
-		state.DepthTest = m_state.DepthTest;
-		state.DepthWrite = m_state.DepthWrite;
-		state.CullingType = m_state.CullingType;
-		state.AlphaBlend = m_state.AlphaBlend;
+		state.DepthTest = renderState.DepthTest;
+		state.DepthWrite = renderState.DepthWrite;
+		state.CullingType = renderState.CullingType;
+		state.AlphaBlend = renderState.AlphaBlend;
 
 		if (renderDistortedBackground)
 		{
@@ -562,13 +590,13 @@ public:
 
 		m_renderer->BeginShader(shader_);
 
-		for (int32_t i = 0; i < m_state.Collector.TextureCount; i++)
+		for (int32_t i = 0; i < renderState.Collector.TextureCount; i++)
 		{
-			state.TextureFilterTypes[i] = m_state.Collector.TextureFilterTypes[i];
-			state.TextureWrapTypes[i] = m_state.Collector.TextureWrapTypes[i];
+			state.TextureFilterTypes[i] = renderState.Collector.TextureFilterTypes[i];
+			state.TextureWrapTypes[i] = renderState.Collector.TextureWrapTypes[i];
 		}
 
-		m_renderer->SetTextures(shader_, textures.data(), m_state.Collector.TextureCount);
+		m_renderer->SetTextures(shader_, textures.data(), renderState.Collector.TextureCount);
 
 		std::array<float, 4> uvInversed;
 		std::array<float, 4> uvInversedBack;
@@ -601,7 +629,7 @@ public:
 		uvInversedMaterial[2] = uvInversedBack[0];
 		uvInversedMaterial[3] = uvInversedBack[1];
 
-		if (m_state.Collector.ShaderType == RendererShaderType::Material)
+		if (renderState.Collector.ShaderType == RendererShaderType::Material)
 		{
 			Effekseer::Matrix44 mstCamera = ToStruct(mCamera);
 			Effekseer::Matrix44 mstProj = ToStruct(mProj);
@@ -614,7 +642,7 @@ public:
 			std::array<float, 4> predefined_uniforms;
 			predefined_uniforms.fill(0.5f);
 			predefined_uniforms[0] = m_renderer->GetTime();
-			predefined_uniforms[1] = m_state.Maginification;
+			predefined_uniforms[1] = renderState.Maginification;
 
 			// vs
 			int32_t vsOffset = 0;
@@ -633,9 +661,9 @@ public:
 			m_renderer->SetVertexBufferToShader(cameraPosition, sizeof(float) * 4, vsOffset);
 			vsOffset += (sizeof(float) * 4);
 
-			for (size_t i = 0; i < m_state.MaterialUniformCount; i++)
+			for (size_t i = 0; i < renderState.MaterialUniformCount; i++)
 			{
-				m_renderer->SetVertexBufferToShader(m_state.MaterialUniforms[i].data(), sizeof(float) * 4, vsOffset);
+				m_renderer->SetVertexBufferToShader(renderState.MaterialUniforms[i].data(), sizeof(float) * 4, vsOffset);
 				vsOffset += (sizeof(float) * 4);
 			}
 
@@ -671,7 +699,7 @@ public:
 			psOffset += (sizeof(float) * 4);
 
 			// shader model
-			if (m_state.Collector.MaterialDataPtr->ShadingModel == ::Effekseer::ShadingModelType::Lit)
+			if (renderState.Collector.MaterialDataPtr->ShadingModel == ::Effekseer::ShadingModelType::Lit)
 			{
 
 				float lightDirection[4];
@@ -695,20 +723,20 @@ public:
 			}
 
 			// refraction
-			if (m_state.Collector.MaterialDataPtr->RefractionUserPtr != nullptr && renderPass == 0)
+			if (renderState.Collector.MaterialDataPtr->RefractionUserPtr != nullptr && renderPass == 0)
 			{
 				auto mat = m_renderer->GetCameraMatrix();
 				m_renderer->SetPixelBufferToShader(&mat, sizeof(float) * 16, psOffset);
 				psOffset += (sizeof(float) * 16);
 			}
 
-			for (size_t i = 0; i < m_state.MaterialUniformCount; i++)
+			for (size_t i = 0; i < renderState.MaterialUniformCount; i++)
 			{
-				m_renderer->SetPixelBufferToShader(m_state.MaterialUniforms[i].data(), sizeof(float) * 4, psOffset);
+				m_renderer->SetPixelBufferToShader(renderState.MaterialUniforms[i].data(), sizeof(float) * 4, psOffset);
 				psOffset += (sizeof(float) * 4);
 			}
 		}
-		else if (m_state.MaterialType == ::Effekseer::RendererMaterialType::Lighting)
+		else if (renderState.MaterialType == ::Effekseer::RendererMaterialType::Lighting)
 		{
 			StandardRendererVertexBuffer vcb;
 			vcb.constantVSBuffer[0] = ToStruct(mCamera);
@@ -716,10 +744,10 @@ public:
 			vcb.uvInversed[0] = uvInversed[0];
 			vcb.uvInversed[1] = uvInversed[1];
 
-			vcb.flipbookParameter.enableInterpolation = static_cast<float>(m_state.EnableInterpolation);
-			vcb.flipbookParameter.loopType = static_cast<float>(m_state.UVLoopType);
-			vcb.flipbookParameter.divideX = static_cast<float>(m_state.FlipbookDivideX);
-			vcb.flipbookParameter.divideY = static_cast<float>(m_state.FlipbookDivideY);
+			vcb.flipbookParameter.enableInterpolation = static_cast<float>(renderState.EnableInterpolation);
+			vcb.flipbookParameter.loopType = static_cast<float>(renderState.UVLoopType);
+			vcb.flipbookParameter.divideX = static_cast<float>(renderState.FlipbookDivideX);
+			vcb.flipbookParameter.divideY = static_cast<float>(renderState.FlipbookDivideY);
 
 			m_renderer->SetVertexBufferToShader(&vcb, sizeof(StandardRendererVertexBuffer), 0);
 
@@ -734,27 +762,27 @@ public:
 			pcb.LightColor = m_renderer->GetLightColor().ToFloat4();
 			pcb.LightAmbientColor = m_renderer->GetLightAmbientColor().ToFloat4();
 
-			pcb.FlipbookParam.EnableInterpolation = static_cast<float>(m_state.EnableInterpolation);
-			pcb.FlipbookParam.InterpolationType = static_cast<float>(m_state.InterpolationType);
+			pcb.FlipbookParam.EnableInterpolation = static_cast<float>(renderState.EnableInterpolation);
+			pcb.FlipbookParam.InterpolationType = static_cast<float>(renderState.InterpolationType);
 
-			pcb.UVDistortionParam.Intensity = m_state.UVDistortionIntensity;
-			pcb.UVDistortionParam.BlendIntensity = m_state.BlendUVDistortionIntensity;
+			pcb.UVDistortionParam.Intensity = renderState.UVDistortionIntensity;
+			pcb.UVDistortionParam.BlendIntensity = renderState.BlendUVDistortionIntensity;
 			pcb.UVDistortionParam.UVInversed[0] = uvInversed[0];
 			pcb.UVDistortionParam.UVInversed[1] = uvInversed[1];
 
-			pcb.BlendTextureParam.BlendType = static_cast<float>(m_state.TextureBlendType);
+			pcb.BlendTextureParam.BlendType = static_cast<float>(renderState.TextureBlendType);
 
-			pcb.EmmisiveParam.EmissiveScaling = m_state.EmissiveScaling;
+			pcb.EmmisiveParam.EmissiveScaling = renderState.EmissiveScaling;
 
-			pcb.EdgeParam.EdgeColor = Effekseer::Color(m_state.EdgeColor[0], m_state.EdgeColor[1], m_state.EdgeColor[2], m_state.EdgeColor[3]).ToFloat4();
-			pcb.EdgeParam.Threshold = m_state.EdgeThreshold;
-			pcb.EdgeParam.ColorScaling = static_cast<float>(m_state.EdgeColorScaling);
+			pcb.EdgeParam.EdgeColor = Effekseer::Color(renderState.EdgeColor[0], renderState.EdgeColor[1], renderState.EdgeColor[2], renderState.EdgeColor[3]).ToFloat4();
+			pcb.EdgeParam.Threshold = renderState.EdgeThreshold;
+			pcb.EdgeParam.ColorScaling = static_cast<float>(renderState.EdgeColorScaling);
 
 			pcb.SoftParticleParam.SetParam(
-				m_state.SoftParticleDistanceFar,
-				m_state.SoftParticleDistanceNear,
-				m_state.SoftParticleDistanceNearOffset,
-				m_state.Maginification,
+				renderState.SoftParticleDistanceFar,
+				renderState.SoftParticleDistanceNear,
+				renderState.SoftParticleDistanceNearOffset,
+				renderState.Maginification,
 				reconstructionParam.DepthBufferScale,
 				reconstructionParam.DepthBufferOffset,
 				reconstructionParam.ProjectionMatrix33,
@@ -777,35 +805,35 @@ public:
 			vcb.uvInversed[2] = 0.0f;
 			vcb.uvInversed[3] = 0.0f;
 
-			vcb.flipbookParameter.enableInterpolation = static_cast<float>(m_state.EnableInterpolation);
-			vcb.flipbookParameter.loopType = static_cast<float>(m_state.UVLoopType);
-			vcb.flipbookParameter.divideX = static_cast<float>(m_state.FlipbookDivideX);
-			vcb.flipbookParameter.divideY = static_cast<float>(m_state.FlipbookDivideY);
+			vcb.flipbookParameter.enableInterpolation = static_cast<float>(renderState.EnableInterpolation);
+			vcb.flipbookParameter.loopType = static_cast<float>(renderState.UVLoopType);
+			vcb.flipbookParameter.divideX = static_cast<float>(renderState.FlipbookDivideX);
+			vcb.flipbookParameter.divideY = static_cast<float>(renderState.FlipbookDivideY);
 
 			m_renderer->SetVertexBufferToShader(&vcb, sizeof(StandardRendererVertexBuffer), 0);
 
 			if (distortion)
 			{
 				PixelConstantBufferDistortion pcb;
-				pcb.DistortionIntencity[0] = m_state.DistortionIntensity;
+				pcb.DistortionIntencity[0] = renderState.DistortionIntensity;
 				pcb.UVInversedBack[0] = uvInversedBack[0];
 				pcb.UVInversedBack[1] = uvInversedBack[1];
 
-				pcb.FlipbookParam.EnableInterpolation = static_cast<float>(m_state.EnableInterpolation);
-				pcb.FlipbookParam.InterpolationType = static_cast<float>(m_state.InterpolationType);
+				pcb.FlipbookParam.EnableInterpolation = static_cast<float>(renderState.EnableInterpolation);
+				pcb.FlipbookParam.InterpolationType = static_cast<float>(renderState.InterpolationType);
 
-				pcb.UVDistortionParam.Intensity = m_state.UVDistortionIntensity;
-				pcb.UVDistortionParam.BlendIntensity = m_state.BlendUVDistortionIntensity;
+				pcb.UVDistortionParam.Intensity = renderState.UVDistortionIntensity;
+				pcb.UVDistortionParam.BlendIntensity = renderState.BlendUVDistortionIntensity;
 				pcb.UVDistortionParam.UVInversed[0] = uvInversed[0];
 				pcb.UVDistortionParam.UVInversed[1] = uvInversed[1];
 
-				pcb.BlendTextureParam.BlendType = static_cast<float>(m_state.TextureBlendType);
+				pcb.BlendTextureParam.BlendType = static_cast<float>(renderState.TextureBlendType);
 
 				pcb.SoftParticleParam.SetParam(
-					m_state.SoftParticleDistanceFar,
-					m_state.SoftParticleDistanceNear,
-					m_state.SoftParticleDistanceNearOffset,
-					m_state.Maginification,
+					renderState.SoftParticleDistanceFar,
+					renderState.SoftParticleDistanceNear,
+					renderState.SoftParticleDistanceNearOffset,
+					renderState.Maginification,
 					reconstructionParam.DepthBufferScale,
 					reconstructionParam.DepthBufferOffset,
 					reconstructionParam.ProjectionMatrix33,
@@ -819,27 +847,27 @@ public:
 			{
 				PixelConstantBuffer pcb;
 				pcb.FalloffParam.Enable = 0;
-				pcb.FlipbookParam.EnableInterpolation = static_cast<float>(m_state.EnableInterpolation);
-				pcb.FlipbookParam.InterpolationType = static_cast<float>(m_state.InterpolationType);
+				pcb.FlipbookParam.EnableInterpolation = static_cast<float>(renderState.EnableInterpolation);
+				pcb.FlipbookParam.InterpolationType = static_cast<float>(renderState.InterpolationType);
 
-				pcb.UVDistortionParam.Intensity = m_state.UVDistortionIntensity;
-				pcb.UVDistortionParam.BlendIntensity = m_state.BlendUVDistortionIntensity;
+				pcb.UVDistortionParam.Intensity = renderState.UVDistortionIntensity;
+				pcb.UVDistortionParam.BlendIntensity = renderState.BlendUVDistortionIntensity;
 				pcb.UVDistortionParam.UVInversed[0] = uvInversed[0];
 				pcb.UVDistortionParam.UVInversed[1] = uvInversed[1];
 
-				pcb.BlendTextureParam.BlendType = static_cast<float>(m_state.TextureBlendType);
+				pcb.BlendTextureParam.BlendType = static_cast<float>(renderState.TextureBlendType);
 
-				pcb.EmmisiveParam.EmissiveScaling = m_state.EmissiveScaling;
+				pcb.EmmisiveParam.EmissiveScaling = renderState.EmissiveScaling;
 
-				pcb.EdgeParam.EdgeColor = Effekseer::Color(m_state.EdgeColor[0], m_state.EdgeColor[1], m_state.EdgeColor[2], m_state.EdgeColor[3]).ToFloat4();
-				pcb.EdgeParam.Threshold = m_state.EdgeThreshold;
-				pcb.EdgeParam.ColorScaling = static_cast<float>(m_state.EdgeColorScaling);
+				pcb.EdgeParam.EdgeColor = Effekseer::Color(renderState.EdgeColor[0], renderState.EdgeColor[1], renderState.EdgeColor[2], renderState.EdgeColor[3]).ToFloat4();
+				pcb.EdgeParam.Threshold = renderState.EdgeThreshold;
+				pcb.EdgeParam.ColorScaling = static_cast<float>(renderState.EdgeColorScaling);
 
 				pcb.SoftParticleParam.SetParam(
-					m_state.SoftParticleDistanceFar,
-					m_state.SoftParticleDistanceNear,
-					m_state.SoftParticleDistanceNearOffset,
-					m_state.Maginification,
+					renderState.SoftParticleDistanceFar,
+					renderState.SoftParticleDistanceNear,
+					renderState.SoftParticleDistanceNearOffset,
+					renderState.Maginification,
 					reconstructionParam.DepthBufferScale,
 					reconstructionParam.DepthBufferOffset,
 					reconstructionParam.ProjectionMatrix33,
@@ -863,18 +891,13 @@ public:
 		m_renderer->SetVertexBuffer(m_renderer->GetVertexBuffer(), stride);
 		m_renderer->SetIndexBuffer(m_renderer->GetIndexBuffer());
 		m_renderer->SetLayout(shader_);
-		m_renderer->GetImpl()->CurrentRenderingUserData = m_state.RenderingUserData;
-		m_renderer->GetImpl()->CurrentHandleUserData = m_state.HandleUserData;
+		m_renderer->GetImpl()->CurrentRenderingUserData = renderState.RenderingUserData;
+		m_renderer->GetImpl()->CurrentHandleUserData = renderState.HandleUserData;
 		m_renderer->DrawSprites(vertexSize / stride / 4, vbOffset / stride);
 
 		m_renderer->EndShader(shader_);
 
 		m_renderer->GetRenderState()->Pop();
-	}
-
-	void Rendering()
-	{
-		Rendering(m_renderer->GetCameraMatrix(), m_renderer->GetProjectionMatrix());
 	}
 };
 
