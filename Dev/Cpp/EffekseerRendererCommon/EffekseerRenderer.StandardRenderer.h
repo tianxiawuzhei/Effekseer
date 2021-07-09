@@ -279,14 +279,25 @@ class StandardRenderer
 {
 private:
 	RENDERER* m_renderer;
-	StandardRendererState m_state;
+
+	struct RenderInfo
+	{
+		StandardRendererState state;
+		int offset;
+		int size;
+		int stride;
+		bool isLargeSize;
+		bool hasDistortion;
+	};
 
 	//! WebAssembly requires a much time to resize std::vector (in a profiler at least) so reduce to call resize
 	std::vector<uint8_t> vertexCaches_;
+	int32_t vertexCacheMaxSize_ = 0;
 	int32_t vertexCacheOffset_ = 0;
-	int32_t squareMaxSize_ = 0;
+	EffekseerRenderer::VertexBufferBase* lastVb_ = nullptr;
 
 	Effekseer::CustomAlignedVector<Effekseer::SIMD::Mat44f> specialCameraMat_;
+	Effekseer::CustomAlignedVector<RenderInfo> renderInfos_;
 
 	void ColorToFloat4(::Effekseer::Color color, float fc[4])
 	{
@@ -304,9 +315,9 @@ private:
 
 public:
 	StandardRenderer(RENDERER* renderer)
-		: squareMaxSize_(renderer->GetSquareMaxCount())
 	{
 		m_renderer = renderer;
+		vertexCacheMaxSize_ = m_renderer->GetVertexBuffer()->GetMaxSize();
 		vertexCaches_.reserve(m_renderer->GetVertexBuffer()->GetMaxSize());
 	}
 
@@ -363,51 +374,70 @@ public:
 		return static_cast<int32_t>(stride);
 	}
 
-	void UpdateStateAndRenderingIfRequired(StandardRendererState state)
+	void BeginRenderingAndRenderingIfRequired(StandardRendererState state, int32_t count, int& stride, void*& data)
 	{
-		if (m_state != state)
+		if (renderInfos_.size() > 0 && renderInfos_[renderInfos_.size() - 1].state != state)
+		{
+			//Rendering();
+		}
+
+		if (renderInfos_.size() > 0 && (renderInfos_[renderInfos_.size() - 1].isLargeSize || renderInfos_[renderInfos_.size() - 1].hasDistortion))
 		{
 			Rendering();
 		}
 
-		m_state = state;
-	}
-
-	void BeginRenderingAndRenderingIfRequired(int32_t count, int& stride, void*& data)
-	{
-		stride = CalculateCurrentStride(m_state);
+		stride = CalculateCurrentStride(state);
 
 		const int32_t requiredSize = count * stride;
+
+		if (requiredSize + EffekseerRenderer::VertexBufferBase::GetNextAliginedVertexRingOffset(vertexCacheOffset_, stride * 4) > vertexCacheMaxSize_)
 		{
-			int32_t renderVertexMaxSize = squareMaxSize_ * stride * 4;
-
-			if (requiredSize + vertexCacheOffset_ > renderVertexMaxSize)
-			{
-				Rendering();
-			}
-
-			const auto oldOffset = vertexCacheOffset_;
-			vertexCacheOffset_ += requiredSize;
-			if (vertexCaches_.size() < vertexCacheOffset_)
-			{
-				vertexCaches_.resize(vertexCacheOffset_);
-			}
-
-			data = (vertexCaches_.data() + oldOffset);
+			Rendering();
 		}
+
+		if (renderInfos_.size() == 0)
+		{
+			EffekseerRenderer::VertexBufferBase* vb = m_renderer->GetVertexBuffer();
+			vertexCacheOffset_ = vb->GetVertexRingOffset();
+			lastVb_ = vb;
+
+			// reset
+			if (requiredSize + EffekseerRenderer::VertexBufferBase::GetNextAliginedVertexRingOffset(vertexCacheOffset_, stride * 4) > vertexCacheMaxSize_)
+			{
+				vertexCacheOffset_ = 0;
+			}
+		}
+
+		vertexCacheOffset_ = EffekseerRenderer::VertexBufferBase::GetNextAliginedVertexRingOffset(vertexCacheOffset_, stride * 4);
+
+		const auto oldOffset = vertexCacheOffset_;
+		vertexCacheOffset_ += requiredSize;
+		if (vertexCaches_.size() < vertexCacheOffset_)
+		{
+			vertexCaches_.resize(vertexCacheOffset_);
+		}
+
+		data = (vertexCaches_.data() + oldOffset);
+
+		RenderInfo renderInfo;
+		renderInfo.state = state;
+		renderInfo.size = requiredSize;
+		renderInfo.offset = oldOffset;
+		renderInfo.stride = stride;
+		renderInfo.isLargeSize = requiredSize > vertexCacheMaxSize_;
+		renderInfo.hasDistortion = state.Collector.IsBackgroundRequiredOnFirstPass && m_renderer->GetDistortingCallback() != nullptr;
+		renderInfos_.emplace_back(renderInfo);
 	}
 
 	void ResetAndRenderingIfRequired()
 	{
 		Rendering();
-
-		// It is always initialized with the next drawing.
-		m_state.Collector = ShaderParameterCollector();
 	}
 
 	const StandardRendererState& GetState()
 	{
-		return m_state;
+		assert(renderInfos_.size() > 0);
+		return renderInfos_.back().state;
 	}
 
 	void Rendering()
@@ -415,64 +445,93 @@ public:
 		if (vertexCacheOffset_ == 0)
 			return;
 
-		Effekseer::SIMD::Mat44f mCamera;
+		int cpuBufStart = INT_MAX;
+		int cpuBufEnd = 0;
 
-		if (m_state.SpecialCameraMat >= 0)
+		for (auto& info : renderInfos_)
 		{
-			mCamera = specialCameraMat_[m_state.SpecialCameraMat];
-		}
-		else
-		{
-			mCamera = m_renderer->GetCameraMatrix();
+			cpuBufStart = Effekseer::Min(cpuBufStart, info.offset);
+			cpuBufEnd = Effekseer::Max(cpuBufEnd, info.offset + info.size);
 		}
 
-		const auto& mProj = m_renderer->GetProjectionMatrix();
+		const int cpuBufSize = cpuBufEnd - cpuBufStart;
 
-		int32_t stride = CalculateCurrentStride(m_state);
-
-		int32_t passNum = 1;
-
-		if (m_state.Collector.ShaderType == RendererShaderType::Material)
 		{
-			if (m_state.Collector.MaterialDataPtr->RefractionUserPtr != nullptr)
+			VertexBufferBase* vb = m_renderer->GetVertexBuffer();
+			assert(vb == lastVb_);
+
+			void* vbData = nullptr;
+			int32_t vbOffset = 0;
+
+			if (vb->RingBufferLock(cpuBufSize, vbOffset, vbData, renderInfos_.begin()->stride * 4))
 			{
-				// refraction and standard
-				passNum = 2;
+				assert(vbData != nullptr);
+				assert(vbOffset == cpuBufStart);
+
+				const auto dst = (reinterpret_cast<uint8_t*>(vbData));
+				memcpy(dst, vertexCaches_.data() + cpuBufStart, cpuBufSize);
+				vb->Unlock();
+			}
+			else
+			{
+				return;
 			}
 		}
 
-		for (int32_t passInd = 0; passInd < passNum; passInd++)
+		for (auto& info : renderInfos_)
 		{
-			int32_t offset = 0;
+			const auto& state = info.state;
 
-			while (true)
+			Effekseer::SIMD::Mat44f mCamera;
+
+			if (state.SpecialCameraMat >= 0)
 			{
-				// only sprite
-				int32_t renderBufferSize = vertexCacheOffset_ - offset;
+				mCamera = specialCameraMat_[state.SpecialCameraMat];
+			}
+			else
+			{
+				mCamera = m_renderer->GetCameraMatrix();
+			}
 
-				int32_t renderVertexMaxSize = squareMaxSize_ * stride * 4;
+			const auto& mProj = m_renderer->GetProjectionMatrix();
 
-				if (renderBufferSize > renderVertexMaxSize)
+			int32_t stride = CalculateCurrentStride(state);
+
+			int32_t passNum = 1;
+
+			if (state.Collector.ShaderType == RendererShaderType::Material)
+			{
+				if (state.Collector.MaterialDataPtr->RefractionUserPtr != nullptr)
 				{
-					renderBufferSize = (renderVertexMaxSize / (stride * 4)) * (stride * 4);
+					// refraction and standard
+					passNum = 2;
+				}
+			}
+
+			for (int32_t passInd = 0; passInd < passNum; passInd++)
+			{
+				int32_t offset = 0;
+
+				// only sprite
+				int32_t renderBufferSize = info.size;
+
+				if (renderBufferSize > vertexCacheMaxSize_)
+				{
+					renderBufferSize = (vertexCacheMaxSize_ / (stride * 4)) * (stride * 4);
 				}
 
-				Rendering_(mCamera, mProj, offset, renderBufferSize, stride, passInd, m_state);
-
-				offset += renderBufferSize;
-
-				if (offset == vertexCacheOffset_)
-					break;
+				Rendering_(mCamera, mProj, info.offset, renderBufferSize, info.stride, passInd, state);
 			}
 		}
 
 		vertexCacheOffset_ = 0;
 		specialCameraMat_.clear();
+		renderInfos_.clear();
 	}
 
 	void Rendering_(const Effekseer::SIMD::Mat44f& mCamera,
 					const Effekseer::SIMD::Mat44f& mProj,
-					int32_t bufferOffset,
+					int32_t vbOffset,
 					int32_t bufferSize,
 					int32_t stride,
 					int32_t renderPass,
@@ -518,25 +577,6 @@ public:
 			}
 
 			textures[renderState.Collector.DepthIndex] = depthTexture;
-		}
-
-		int32_t vertexSize = bufferSize;
-		int32_t vbOffset = 0;
-		{
-			VertexBufferBase* vb = m_renderer->GetVertexBuffer();
-
-			void* vbData = nullptr;
-
-			if (vb->RingBufferLock(vertexSize, vbOffset, vbData, stride * 4))
-			{
-				assert(vbData != nullptr);
-				memcpy(vbData, vertexCaches_.data() + bufferOffset, vertexSize);
-				vb->Unlock();
-			}
-			else
-			{
-				return;
-			}
 		}
 
 		SHADER* shader_ = nullptr;
@@ -893,7 +933,7 @@ public:
 		m_renderer->SetLayout(shader_);
 		m_renderer->GetImpl()->CurrentRenderingUserData = renderState.RenderingUserData;
 		m_renderer->GetImpl()->CurrentHandleUserData = renderState.HandleUserData;
-		m_renderer->DrawSprites(vertexSize / stride / 4, vbOffset / stride);
+		m_renderer->DrawSprites(bufferSize / stride / 4, vbOffset / stride);
 
 		m_renderer->EndShader(shader_);
 

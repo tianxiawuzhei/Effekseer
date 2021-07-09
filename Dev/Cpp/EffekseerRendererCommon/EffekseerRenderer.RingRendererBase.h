@@ -144,11 +144,6 @@ protected:
 			instances_.reserve(count);
 		}
 
-		if (count == 1)
-		{
-			renderer->GetStandardRenderer()->ResetAndRenderingIfRequired();
-		}
-
 		EffekseerRenderer::StandardRendererState state;
 		state.CullingType = ::Effekseer::CullingType::Double;
 		state.DepthTest = param.ZTest;
@@ -199,8 +194,7 @@ protected:
 			state.SpecialCameraMat = renderer->GetStandardRenderer()->AllocateSpecialCameraMat();
 		}
 
-		renderer->GetStandardRenderer()->UpdateStateAndRenderingIfRequired(state);
-		renderer->GetStandardRenderer()->BeginRenderingAndRenderingIfRequired(count * singleVertexCount, stride_, (void*&)m_ringBufferData);
+		renderer->GetStandardRenderer()->BeginRenderingAndRenderingIfRequired(state, count * singleVertexCount, stride_, (void*&)m_ringBufferData);
 
 		vertexCount_ = count * singleVertexCount;
 	}
