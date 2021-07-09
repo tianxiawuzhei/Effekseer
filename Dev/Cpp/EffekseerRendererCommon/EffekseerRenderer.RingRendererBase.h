@@ -191,7 +191,7 @@ protected:
 
 		if (CanSingleRendering())
 		{
-			state.SpecialCameraMat = renderer->GetStandardRenderer()->AllocateSpecialCameraMat();
+			renderer->GetStandardRenderer()->ResetAndRenderingIfRequired();
 		}
 
 		renderer->GetStandardRenderer()->BeginRenderingAndRenderingIfRequired(state, count * singleVertexCount, stride_, (void*&)m_ringBufferData);
@@ -716,8 +716,8 @@ protected:
 		if (CanSingleRendering())
 		{
 			::Effekseer::SIMD::Mat44f mat = m_singleRenderingMatrix * renderer->GetCameraMatrix();
-			const auto& state = m_renderer->GetStandardRenderer()->GetState();
-
+			auto& state = m_renderer->GetStandardRenderer()->GetState();
+			state.SpecialCameraMat = renderer->GetStandardRenderer()->AllocateSpecialCameraMat();
 			renderer->GetStandardRenderer()->SetSpecialCameraMat(state.SpecialCameraMat, mat);
 		}
 

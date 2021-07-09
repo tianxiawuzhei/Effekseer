@@ -434,7 +434,7 @@ public:
 		Rendering();
 	}
 
-	const StandardRendererState& GetState()
+	StandardRendererState& GetState()
 	{
 		assert(renderInfos_.size() > 0);
 		return renderInfos_.back().state;
