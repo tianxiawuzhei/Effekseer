@@ -88,8 +88,6 @@ private:
 		std::unique_ptr<VertexArrayGroup> vao;
 	};
 
-	int32_t currentRingIndex_ = 0;
-	int32_t ringBufferCount_ = 4;
 	std::vector<std::shared_ptr<RingVertex>> ringVs_;
 
 	//VertexBuffer* m_vertexBuffer;

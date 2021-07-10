@@ -729,7 +729,7 @@ bool RendererImplemented::EndRendering()
 //----------------------------------------------------------------------------------
 VertexBuffer* RendererImplemented::GetVertexBuffer()
 {
-	return ringVs_[currentRingIndex_]->vertexBuffer.get();
+	return ringVs_[GetImpl()->CurrentRingBufferIndex]->vertexBuffer.get();
 }
 
 //----------------------------------------------------------------------------------
@@ -766,6 +766,13 @@ void RendererImplemented::SetSquareMaxCount(int32_t count)
 
 	ES_SAFE_DELETE(m_indexBuffer);
 	ringVs_.clear();
+	GetImpl()->CurrentRingBufferIndex = 0;
+	GetImpl()->RingBufferCount = 3;
+
+	int vertexBufferSize = EffekseerRenderer::GetMaximumVertexSizeInAllTypes() * m_squareMaxCount * 4;
+
+	auto storage = std::make_shared<SharedVertexTempStorage>();
+	storage->buffer.resize(vertexBufferSize);
 
 	// generate an index buffer
 	{
@@ -784,16 +791,15 @@ void RendererImplemented::SetSquareMaxCount(int32_t count)
 	// generate index data
 	GenerateIndexData();
 
-	currentRingIndex_ = 0;
-
-	for (int i = 0; i < ringBufferCount_; i++)
+	for (int i = 0; i < GetImpl()->RingBufferCount; i++)
 	{
 		auto rv = std::make_shared<RingVertex>();
 		rv->vertexBuffer = std::unique_ptr<VertexBuffer>(VertexBuffer::Create(
 			graphicsDevice_,
-			EffekseerRenderer::GetMaximumVertexSizeInAllTypes() * m_squareMaxCount * 4 / ringBufferCount_,
-			EffekseerRenderer ::GetMaximumVertexSizeInAllTypes() * m_squareMaxCount * 4,
-			true));
+			vertexBufferSize,
+			vertexBufferSize,
+			true,
+			storage));
 		if (rv->vertexBuffer == nullptr)
 		{
 			return;
@@ -1032,9 +1038,6 @@ void RendererImplemented::DrawSprites(int32_t spriteCount, int32_t vertexOffset)
 		glDrawElements(GL_LINES, spriteCount * 8, stride, (void*)((size_t)vertexOffset / 4 * 8 * indexBufferCurrentStride_));
 	}
 
-	currentRingIndex_++;
-	currentRingIndex_ %= ringVs_.size();
-
 	GLCheckError();
 }
 
@@ -1115,7 +1118,7 @@ void RendererImplemented::BeginShader(Shader* shader)
 {
 	GLCheckError();
 
-	auto& ringv = ringVs_[currentRingIndex_];
+	auto& ringv = ringVs_[GetImpl()->CurrentRingBufferIndex];
 
 	// change VAO with shader
 	if (m_currentVertexArray != nullptr)

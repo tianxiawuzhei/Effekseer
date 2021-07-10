@@ -13,22 +13,37 @@ namespace EffekseerRendererGL
 //-----------------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------------
-VertexBuffer::VertexBuffer(const Backend::GraphicsDeviceRef& graphicsDevice, int initialSize, int size, bool isDynamic)
+VertexBuffer::VertexBuffer(const Backend::GraphicsDeviceRef& graphicsDevice, int initialSize, int size, bool isDynamic, std::shared_ptr<SharedVertexTempStorage> storage)
 	: DeviceObject(graphicsDevice.Get())
 	, VertexBufferBase(size, isDynamic)
 	, initialSize_(initialSize)
 	, m_vertexRingStart(0)
 	, m_ringBufferLock(false)
 	, currentSize_(initialSize)
+	, storage_(storage)
 {
-	m_resource = new uint8_t[currentSize_];
-	memset(m_resource, 0, (size_t)currentSize_);
+	currentSize_ = size;
+	
+	if (storage == nullptr)
+	{
+		storage_ = std::make_shared<SharedVertexTempStorage>();
+		storage_->buffer.resize(size);
+	}
+	else
+	{
+		assert(storage_->buffer.size() == size);
+	}
+
+	m_resource = nullptr;
+
+	//m_resource = new uint8_t[currentSize_];
+	//memset(m_resource, 0, (size_t)currentSize_);
 
 	GLExt::glGenBuffers(1, &m_buffer);
 	GLExt::glBindBuffer(GL_ARRAY_BUFFER, m_buffer);
 
 #ifndef __ANDROID__
-	GLExt::glBufferData(GL_ARRAY_BUFFER, currentSize_, m_resource, GL_STREAM_DRAW);
+	GLExt::glBufferData(GL_ARRAY_BUFFER, currentSize_, storage_->buffer.data(), GL_STREAM_DRAW);
 #endif // !__ANDROID__
 
 	GLExt::glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -40,15 +55,15 @@ VertexBuffer::VertexBuffer(const Backend::GraphicsDeviceRef& graphicsDevice, int
 VertexBuffer::~VertexBuffer()
 {
 	GLExt::glDeleteBuffers(1, &m_buffer);
-	delete[] m_resource;
+	//delete[] m_resource;
 }
 
 //-----------------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------------
-VertexBuffer* VertexBuffer::Create(const Backend::GraphicsDeviceRef& graphicsDevice, int initialSize, int size, bool isDynamic)
+VertexBuffer* VertexBuffer::Create(const Backend::GraphicsDeviceRef& graphicsDevice, int initialSize, int size, bool isDynamic, std::shared_ptr<SharedVertexTempStorage> storage)
 {
-	return new VertexBuffer(graphicsDevice, initialSize, size, isDynamic);
+	return new VertexBuffer(graphicsDevice, initialSize, size, isDynamic, storage);
 }
 
 GLuint VertexBuffer::GetInterface()
@@ -77,7 +92,7 @@ void VertexBuffer::OnResetDevice()
 	GLExt::glBindBuffer(GL_ARRAY_BUFFER, m_buffer);
 
 #ifndef __ANDROID__
-	GLExt::glBufferData(GL_ARRAY_BUFFER, currentSize_, m_resource, GL_STREAM_DRAW);
+	GLExt::glBufferData(GL_ARRAY_BUFFER, currentSize_, storage_->buffer.data(), GL_STREAM_DRAW);
 #endif // !__ANDROID__
 
 	GLExt::glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -94,6 +109,7 @@ void VertexBuffer::Lock()
 	m_isLock = true;
 	m_offset = 0;
 	m_vertexRingStart = 0;
+	m_resource = storage_->buffer.data();
 }
 
 //-----------------------------------------------------------------------------------
@@ -108,12 +124,13 @@ bool VertexBuffer::RingBufferLock(int32_t size, int32_t& offset, void*& data, in
 	if (size > m_size)
 		return false;
 
+	/*
 	if (size > currentSize_)
 	{
 		currentSize_ = static_cast<int32_t>(size * 1.5f);
 		currentSize_ = Effekseer::Min(size, currentSize_);
 
-			GLExt::glGenBuffers(1, &m_buffer);
+		GLExt::glGenBuffers(1, &m_buffer);
 		GLExt::glBindBuffer(GL_ARRAY_BUFFER, m_buffer);
 
 #ifndef __ANDROID__
@@ -122,13 +139,15 @@ bool VertexBuffer::RingBufferLock(int32_t size, int32_t& offset, void*& data, in
 
 		GLExt::glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
+	*/
 
 	m_vertexRingOffset = GetNextAliginedVertexRingOffset(m_vertexRingOffset, alignment);
+	m_resource = storage_->buffer.data();
 
 #ifdef __ANDROID__
 	if (true)
 #else
-	if (RequireResetRing(m_vertexRingOffset, size, m_size))
+	if (RequireResetRing(m_vertexRingOffset, size, currentSize_))
 #endif
 	{
 		offset = 0;
@@ -245,6 +264,7 @@ void VertexBuffer::Unlock()
 
 	m_isLock = false;
 	m_ringBufferLock = false;
+	m_resource = nullptr;
 }
 
 bool VertexBuffer::IsValid()
