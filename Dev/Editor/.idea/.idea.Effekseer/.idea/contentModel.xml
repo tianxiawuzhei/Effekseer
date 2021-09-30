@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ContentModelStore">
+    <e p="$PROJECT_DIR$" t="IncludeFlat">
+      <e p="Effekseer" t="IncludeRecursive">
+        <e p="App.config" t="Include" />
+        <e p="Configs" t="Include">
+          <e p="WindowConfig.cs" t="Include" />
+        </e>
+        <e p="Data" t="Include">
+          <e p="ViewPoint.cs" t="Include" />
+        </e>
+        <e p="Define.cs" t="Include" />
+        <e p="Effekseer.csproj" t="IncludeRecursive" />
+        <e p="GUI" t="Include">
+          <e p="Commands.cs" t="Include" />
+          <e p="Component" t="Include">
+            <e p="Boolean.cs" t="Include" />
+            <e p="ColorCtrl.cs" t="Include" />
+            <e p="ColorWithRandom.cs" t="Include" />
+            <e p="Dummy.cs" t="Include" />
+            <e p="DynamicSelector.cs" t="Include" />
+            <e p="Enum.cs" t="Include" />
+            <e p="FCurveButton.cs" t="Include" />
+            <e p="Float.cs" t="Include" />
+            <e p="FloatWithRandom.cs" t="Include" />
+            <e p="Int.cs" t="Include" />
+            <e p="IntWithInifinite.cs" t="Include" />
+            <e p="IntWithRandom.cs" t="Include" />
+            <e p="ParameterList.cs" t="Include" />
+            <e p="PathForImage.cs" t="Include" />
+            <e p="PathForMaterial.cs" t="Include" />
+            <e p="PathForModel.cs" t="Include" />
+            <e p="PathForSound.cs" t="Include" />
+            <e p="String.cs" t="Include" />
+            <e p="Utils.cs" t="Include" />
+            <e p="Vector2D.cs" t="Include" />
+            <e p="Vector2DWithRandom.cs" t="Include" />
+            <e p="Vector3D.cs" t="Include" />
+            <e p="Vector3DWithRandom.cs" t="Include" />
+            <e p="Vector4D.cs" t="Include" />
+          </e>
+          <e p="Controls.cs" t="Include" />
+          <e p="Dialog" t="Include">
+            <e p="About.cs" t="Include" />
+            <e p="MessageBox.cs" t="Include" />
+            <e p="OpenModel.cs" t="Include" />
+            <e p="RenameNode.cs" t="Include" />
+            <e p="SaveOnDisposing.cs" t="Include" />
+          </e>
+          <e p="Dock" t="Include">
+            <e p="BehaviorValues.cs" t="Include" />
+            <e p="CommonValues.cs" t="Include" />
+            <e p="Culling.cs" t="Include" />
+            <e p="DepthValues.cs" t="Include" />
+            <e p="DockManager.cs" t="Include" />
+            <e p="DockPanel.cs" t="Include" />
+            <e p="Dynamic.cs" t="Include" />
+            <e p="EffectViwer.cs" t="Include" />
+            <e p="Environment.cs" t="Include" />
+            <e p="FCurves.cs" t="Include" />
+            <e p="FileViewer.cs" t="Include" />
+            <e p="GenerationLocationValues.cs" t="Include" />
+            <e p="GlobalValues.cs" t="Include" />
+            <e p="LocationAbsValues.cs" t="Include" />
+            <e p="LocationValues.cs" t="Include" />
+            <e p="Network.cs" t="Include" />
+            <e p="NodeTreeView.cs" t="Include" />
+            <e p="Option.cs" t="Include" />
+            <e p="PostEffect.cs" t="Include" />
+            <e p="Recorder.cs" t="Include" />
+            <e p="RendererCommonValues.cs" t="Include" />
+            <e p="RendererValues.cs" t="Include" />
+            <e p="RotationValues.cs" t="Include" />
+            <e p="ScaleValues.cs" t="Include" />
+            <e p="SoundValues.cs" t="Include" />
+            <e p="ViewerController.cs" t="Include" />
+            <e p="ViewPoint.cs" t="Include" />
+          </e>
+          <e p="DragAndDrops.cs" t="Include" />
+          <e p="Icons.cs" t="Include" />
+          <e p="Manager.cs" t="Include" />
+          <e p="Menu" t="Include">
+            <e p="MainMenu.cs" t="Include" />
+            <e p="Menu.cs" t="Include" />
+            <e p="MenuItem.cs" t="Include" />
+          </e>
+          <e p="Network.cs" t="Include" />
+          <e p="RecentFiles.cs" t="Include" />
+          <e p="Shortcuts.cs" t="Include" />
+          <e p="ThumbnailManager.cs" t="Include" />
+          <e p="Viewer.cs" t="Include" />
+        </e>
+        <e p="icon.ico" t="Include" />
+        <e p="IO" t="Include">
+          <e p="MaterialCacheGenerator.cs" t="Include" />
+          <e p="mqoToEffekseerModelConverter" t="Include">
+            <e p="Color.cs" t="Include" />
+            <e p="Matrix44.cs" t="Include" />
+            <e p="mqoIO" t="Include">
+              <e p="Data.cs" t="Include" />
+              <e p="Loader.cs" t="Include" />
+              <e p="Loexer.cs" t="Include" />
+              <e p="Realtime" t="Include">
+                <e p="Face.cs" t="Include" />
+                <e p="Material.cs" t="Include" />
+                <e p="Model.cs" t="Include" />
+                <e p="Object.cs" t="Include" />
+                <e p="Vertex.cs" t="Include" />
+              </e>
+            </e>
+            <e p="Program.cs" t="Include" />
+            <e p="Vector2D.cs" t="Include" />
+            <e p="Vector3D.cs" t="Include" />
+            <e p="Vector4D.cs" t="Include" />
+          </e>
+        </e>
+        <e p="obj" t="ExcludeRecursive" />
+        <e p="packages.config" t="Include" />
+        <e p="Plugin" t="Include">
+          <e p="ExportDefault.cs" t="Include" />
+        </e>
+        <e p="Process" t="Include">
+          <e p="MaterialEditor.cs" t="Include" />
+        </e>
+        <e p="Program.cs" t="Include" />
+        <e p="Properties" t="Include">
+          <e p="AssemblyInfo.cs" t="Include" />
+        </e>
+        <e p="swig" t="Include">
+          <e p="ColorEditFlags.cs" t="Include" />
+          <e p="ComboFlags.cs" t="Include" />
+          <e p="CompiledMaterialGenerator.cs" t="Include" />
+          <e p="Cond.cs" t="Include" />
+          <e p="DeviceType.cs" t="Include" />
+          <e p="DialogButtons.cs" t="Include" />
+          <e p="DialogSelection.cs" t="Include" />
+          <e p="DialogStyle.cs" t="Include" />
+          <e p="DistortionType.cs" t="Include" />
+          <e p="DockNodeFlags.cs" t="Include" />
+          <e p="DockSplitDir.cs" t="Include" />
+          <e p="EffekseerNative.cs" t="Include" />
+          <e p="EffekseerNativePINVOKE.cs" t="Include" />
+          <e p="FCurveEdgeType.cs" t="Include" />
+          <e p="FCurveInterporationType.cs" t="Include" />
+          <e p="FileDialog.cs" t="Include" />
+          <e p="GUIManager.cs" t="Include" />
+          <e p="GUIManagerCallback.cs" t="Include" />
+          <e p="ImageResource.cs" t="Include" />
+          <e p="ImGuiColFlags.cs" t="Include" />
+          <e p="ImGuiStyleVarFlags.cs" t="Include" />
+          <e p="InputTextFlags.cs" t="Include" />
+          <e p="IO.cs" t="Include" />
+          <e p="IOCallback.cs" t="Include" />
+          <e p="Key.cs" t="Include" />
+          <e p="MainWindow.cs" t="Include" />
+          <e p="MainWindowState.cs" t="Include" />
+          <e p="MouseCursor.cs" t="Include" />
+          <e p="Native.cs" t="Include" />
+          <e p="RecordingModeType.cs" t="Include" />
+          <e p="RecordingParameter.cs" t="Include" />
+          <e p="RenderMode.cs" t="Include" />
+          <e p="SelectableFlags.cs" t="Include" />
+          <e p="StaticFile.cs" t="Include" />
+          <e p="StaticFileType.cs" t="Include" />
+          <e p="SystemLanguage.cs" t="Include" />
+          <e p="TransparenceType.cs" t="Include" />
+          <e p="TreeNodeFlags.cs" t="Include" />
+          <e p="Vec2.cs" t="Include" />
+          <e p="ViewerEffectBehavior.cs" t="Include" />
+          <e p="ViewerParamater.cs" t="Include" />
+          <e p="ViewMode.cs" t="Include" />
+          <e p="WindowFlags.cs" t="Include" />
+        </e>
+        <e p="Utils" t="Include">
+          <e p="CompileErrorGenerator.cs" t="Include" />
+          <e p="DelayedList.cs" t="Include" />
+        </e>
+      </e>
+      <e p="Effekseer.sln" t="IncludeFlat" />
+      <e p="EffekseerCore" t="IncludeRecursive">
+        <e p="Binary" t="Include">
+          <e p="CommonValues.cs" t="Include" />
+          <e p="Define.cs" t="Include" />
+          <e p="Exporter.cs" t="Include" />
+          <e p="GenerationLocationValues.cs" t="Include" />
+          <e p="LocationAbsValues.cs" t="Include" />
+          <e p="LocationValues.cs" t="Include" />
+          <e p="RendererCommonValues.cs" t="Include" />
+          <e p="RendererValues.cs" t="Include" />
+          <e p="RotationValues.cs" t="Include" />
+          <e p="ScaleValues.cs" t="Include" />
+          <e p="SoundValues.cs" t="Include" />
+        </e>
+        <e p="Command" t="Include">
+          <e p="CommandManager.cs" t="Include" />
+          <e p="DelegateCommand.cs" t="Include" />
+          <e p="ICommand.cs" t="Include" />
+        </e>
+        <e p="Core.cs" t="Include" />
+        <e p="Data" t="Include">
+          <e p="CommonValues.cs" t="Include" />
+          <e p="Define.cs" t="Include" />
+          <e p="DepthValues.cs" t="Include" />
+          <e p="Dynamic.cs" t="Include" />
+          <e p="EffectBehaviorValues.cs" t="Include" />
+          <e p="EffectCullingValues.cs" t="Include" />
+          <e p="EnvironmentValues.cs" t="Include" />
+          <e p="GenerationLocationValues.cs" t="Include" />
+          <e p="GlobalValues.cs" t="Include" />
+          <e p="IO.cs" t="Include" />
+          <e p="LocationAbsValues.cs" t="Include" />
+          <e p="LocationValues.cs" t="Include" />
+          <e p="Node.cs" t="Include" />
+          <e p="NodeBase.cs" t="Include" />
+          <e p="NodeRoot.cs" t="Include" />
+          <e p="OptionValues.cs" t="Include" />
+          <e p="PostEffectValues.cs" t="Include" />
+          <e p="RecordingValues.cs" t="Include" />
+          <e p="RendererCommonValues.cs" t="Include" />
+          <e p="RendererValues.cs" t="Include" />
+          <e p="RotationValues.cs" t="Include" />
+          <e p="ScaleValues.cs" t="Include" />
+          <e p="SoundValues.cs" t="Include" />
+          <e p="Value" t="Include">
+            <e p="Boolean.cs" t="Include" />
+            <e p="Color.cs" t="Include" />
+            <e p="ColorWithRandom.cs" t="Include" />
+            <e p="DynamicEquationReference.cs" t="Include" />
+            <e p="Enum.cs" t="Include" />
+            <e p="EnumBase.cs" t="Include" />
+            <e p="FCurve.cs" t="Include" />
+            <e p="FCurveColor.cs" t="Include" />
+            <e p="FCurveScalar.cs" t="Include" />
+            <e p="FCurveVector2D.cs" t="Include" />
+            <e p="FCurveVector3D.cs" t="Include" />
+            <e p="Float.cs" t="Include" />
+            <e p="FloatWithRandom.cs" t="Include" />
+            <e p="Int.cs" t="Include" />
+            <e p="IntWithInifinite.cs" t="Include" />
+            <e p="IntWithRandom.cs" t="Include" />
+            <e p="Path.cs" t="Include" />
+            <e p="PathForImage.cs" t="Include" />
+            <e p="PathForMaterial.cs" t="Include" />
+            <e p="PathForModel.cs" t="Include" />
+            <e p="PathForSound.cs" t="Include" />
+            <e p="String.cs" t="Include" />
+            <e p="ValueList.cs" t="Include" />
+            <e p="Vector2D.cs" t="Include" />
+            <e p="Vector2DWithRandom.cs" t="Include" />
+            <e p="Vector3D.cs" t="Include" />
+            <e p="Vector3DWithRandom.cs" t="Include" />
+            <e p="Vector4D.cs" t="Include" />
+          </e>
+        </e>
+        <e p="Define.cs" t="Include" />
+        <e p="EffekseerCore.csproj" t="IncludeRecursive" />
+        <e p="Exporter" t="Include">
+          <e p="glTFExporter.cs" t="Include" />
+        </e>
+        <e p="InternalScript" t="Include">
+          <e p="Compiler.cs" t="Include" />
+          <e p="Exceptions.cs" t="Include" />
+          <e p="Lexer.cs" t="Include" />
+          <e p="Parser.cs" t="Include" />
+          <e p="SSAGenerator.cs" t="Include" />
+        </e>
+        <e p="IO" t="Include">
+          <e p="EfkEfc.cs" t="Include" />
+        </e>
+        <e p="obj" t="ExcludeRecursive" />
+        <e p="packages.config" t="Include" />
+        <e p="Properties" t="Include">
+          <e p="AssemblyInfo.cs" t="Include" />
+        </e>
+        <e p="Script" t="Include">
+          <e p="CommandScript.cs" t="Include" />
+          <e p="Compiler.cs" t="Include" />
+          <e p="Define.cs" t="Include" />
+          <e p="ExportScript.cs" t="Include" />
+          <e p="ImportScript.cs" t="Include" />
+          <e p="ScriptBase.cs" t="Include" />
+          <e p="ScriptCollection.cs" t="Include" />
+          <e p="SelectedScript.cs" t="Include" />
+        </e>
+        <e p="Utils" t="Include">
+          <e p="BinaryWriter.cs" t="Include" />
+          <e p="CsvReader.cs" t="Include" />
+          <e p="Logger.cs" t="Include" />
+          <e p="Misc.cs" t="Include" />
+          <e p="ResourceCache.cs" t="Include" />
+          <e p="Zlib.cs" t="Include" />
+        </e>
+        <e p="Utl" t="Include">
+          <e p="ArrayExtensions.cs" t="Include" />
+          <e p="BinaryReader.cs" t="Include" />
+          <e p="BitConverterExtensions.cs" t="Include" />
+          <e p="MaterialInformation.cs" t="Include" />
+          <e p="Math.cs" t="Include" />
+          <e p="MathExtensions.cs" t="Include" />
+          <e p="ModelInformation.cs" t="Include" />
+          <e p="ParamaterTreeNode.cs" t="Include" />
+          <e p="RGBHSVColor.cs" t="Include" />
+          <e p="TextureInformation.cs" t="Include" />
+          <e p="XmlDocumentExtensions.cs" t="Include" />
+        </e>
+      </e>
+      <e p="packages" t="ExcludeRecursive" />
+      <e p="TestCSharp" t="IncludeRecursive">
+        <e p="App.config" t="Include" />
+        <e p="Misc" t="Include">
+          <e p="Zlib.cs" t="Include" />
+        </e>
+        <e p="obj" t="ExcludeRecursive" />
+        <e p="Program.cs" t="Include" />
+        <e p="TestCSharp.csproj" t="IncludeRecursive" />
+      </e>
+    </e>
+    <e p="$PROJECT_DIR$/../release" t="ExcludeRecursive" />
+    <e p="$USER_HOME$/Library/Caches/JetBrains/Rider2020.2/extResources" t="IncludeRecursive" />
+    <e p="$USER_HOME$/Library/Caches/JetBrains/Rider2020.2/resharper-host/local/Transient/Rider/v202/SolutionCaches/_Effekseer.1951286675.00" t="ExcludeRecursive" />
+  </component>
+</project>

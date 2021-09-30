@@ -4,13 +4,13 @@ export CC="clang -arch i386 -mmacosx-version-min=10.6"
 
 mkdir Mac/Effekseer.app/Contents/Resources/
 
-(cd release;
-mkbundle -o Effekseer Effekseer.exe --deps --sdk /Library/Frameworks/Mono.framework/Versions/Current;
-otool -L Effekseer;)
+# (cd release;
+# mkbundle  Effekseer.exe --deps -L './';
+# otool -L Effekseer;)
 
-(cd release;
-mkbundle -o tools/mqoToEffekseerModelConverter tools/mqoToEffekseerModelConverter.exe --deps --sdk /Library/Frameworks/Mono.framework/Versions/Current;
-otool -L tools/mqoToEffekseerModelConverter;)
+# (cd release;
+# mkbundle -o tools/mqoToEffekseerModelConverter tools/mqoToEffekseerModelConverter.exe --deps;
+# otool -L tools/mqoToEffekseerModelConverter;)
 
 cp release/Effekseer Mac/Effekseer.app/Contents/Resources/
 cp release/Effekseer.exe Mac/Effekseer.app/Contents/Resources/
@@ -22,10 +22,9 @@ cp -r release/scripts Mac/Effekseer.app/Contents/Resources/
 
 mkdir Mac/Effekseer.app/Contents/Resources/tools
 cp release/tools/mqoToEffekseerModelConverter Mac/Effekseer.app/Contents/Resources/tools
+# echo Please download from https://github.com/effekseer/Effekseer/releases/download/Prebuild/ to Prebuild
 
-echo Please download from https://github.com/effekseer/Effekseer/releases/download/Prebuild/ to Prebuild
-
-cp Prebuild/fbxToEffekseerModelConverter Mac/Effekseer.app/Contents/Resources/tools/
-cp Prebuild/libfbxsdk.dylib  Mac/Effekseer.app/Contents/Resources/tools/
+cp release/tools//fbxToEffekseerModelConverter Mac/Effekseer.app/Contents/Resources/tools/
+cp release/tools//libfbxsdk.dylib  Mac/Effekseer.app/Contents/Resources/tools/
 
 chmod +x Mac/Effekseer.app/Contents/MacOS/script.sh

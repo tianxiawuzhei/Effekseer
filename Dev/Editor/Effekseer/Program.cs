@@ -24,7 +24,7 @@ namespace Effekseer
 		public static string EntryDirectory
 		{
 			get;
-			private set;
+			set;
 		}
 
 		[STAThread]
@@ -50,7 +50,11 @@ namespace Effekseer
 			try
 			{
 				StartDirectory = System.IO.Directory.GetCurrentDirectory();
-				EntryDirectory = GUI.Manager.GetEntryDirectory();
+				//EntryDirectory = GUI.Manager.GetEntryDirectory();
+				if (string.IsNullOrEmpty(EntryDirectory))
+				{
+					EntryDirectory = StartDirectory;
+				}
 			}
 			catch(Exception e)
 			{
@@ -321,7 +325,7 @@ namespace Effekseer
 			{
 				if (Core.Language == Language.Japanese)
 				{
-					messageBase = "ƒAƒNƒZƒX‚ª‹‘”Û‚³‚êƒGƒ‰[‚ª”­¶‚µ‚Ü‚µ‚½B\n‘¼‚ÌƒfƒBƒŒƒNƒgƒŠ‚ÉƒCƒ“ƒXƒg[ƒ‹‚µ‚Ä‚­‚¾‚³‚¢B\n‚à‚µ‚­‚ÍƒAƒNƒZƒX‚Å‚«‚È‚¢ƒtƒ@ƒCƒ‹‚ğ‘I‘ğ‚µ‚Ä‚¢‚Ü‚·B\n";
+					messageBase = "ï¿½Aï¿½Nï¿½Zï¿½Xï¿½ï¿½ï¿½ï¿½ï¿½Û‚ï¿½ï¿½ï¿½Gï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ü‚ï¿½ï¿½ï¿½ï¿½B\nï¿½ï¿½ï¿½Ìƒfï¿½Bï¿½ï¿½ï¿½Nï¿½gï¿½ï¿½ï¿½ÉƒCï¿½ï¿½ï¿½Xï¿½gï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½B\nï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÍƒAï¿½Nï¿½Zï¿½Xï¿½Å‚ï¿½ï¿½È‚ï¿½ï¿½tï¿½@ï¿½Cï¿½ï¿½ï¿½ï¿½Iï¿½ï¿½ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½Ü‚ï¿½ï¿½B\n";
 				}
 				else
 				{
@@ -332,7 +336,7 @@ namespace Effekseer
 			{
 				if (Core.Language == Language.Japanese)
 				{
-					messageBase = "ƒGƒ‰[‚ª”­¶‚µ‚Ü‚µ‚½B";
+					messageBase = "ï¿½Gï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ü‚ï¿½ï¿½ï¿½ï¿½B";
 				}
 			}
 
@@ -348,7 +352,7 @@ namespace Effekseer
 
 				if (Core.Language == Language.Japanese)
 				{
-					message = messageBase + "ƒGƒ‰[ƒƒO‚ª" + filepath + "‚Éo—Í‚³‚ê‚Ü‚µ‚½B\n‚à‚µƒGƒ‰[‚ğƒ[ƒ‹‚âTwitter‚ÅEffekseer‚É‘—‚Á‚Ä‚¢‚½‚¾‚¯‚é‚Æ•‚©‚è‚Ü‚·B\n";
+					message = messageBase + "ï¿½Gï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½Oï¿½ï¿½" + filepath + "ï¿½Éoï¿½Í‚ï¿½ï¿½ï¿½Ü‚ï¿½ï¿½ï¿½ï¿½B\nï¿½ï¿½ï¿½ï¿½ï¿½Gï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½ï¿½Twitterï¿½ï¿½Effekseerï¿½É‘ï¿½ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æï¿½ï¿½ï¿½ï¿½ï¿½Ü‚ï¿½ï¿½B\n";
 				}
 				swig.GUIManager.show(message, "Error", swig.DialogStyle.Error, swig.DialogButtons.OK);
 			}

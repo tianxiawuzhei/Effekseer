@@ -174,7 +174,7 @@ std::shared_ptr<ContextLLGI> context;
 
 id<MTLRenderCommandEncoder> GetEncoder()
 {
-    return static_cast<LLGI::CommandListMetal*>(context->commandList)->GetImpl()->renderEncoder;
+    return nullptr;
 }
 
 int GetSwapBufferCount() { return 3; }
@@ -189,7 +189,7 @@ bool InitializeWindowAndDevice(int32_t windowWidth, int32_t windowHeight)
 	LLGI::PlatformParameter platformParam;
 	platformParam.Device = LLGI::DeviceType::Metal;
 	platformParam.WaitVSync = true;
-    
+
 	context->window = std::shared_ptr<LLGI::Window>(LLGI::CreateWindow("Metal", LLGI::Vec2I(windowWidth, windowHeight)));
 	if (context->window == nullptr)
 	{
